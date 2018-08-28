@@ -49,9 +49,15 @@ Building up on previous notebooks, this notebook implements the back-propagation
 &#8226; Multi-box IOU 			&#8226; YoloLoss
 &#8226; Build truth tensor			&#8226; Generate masks
 &#8226; Loss function				&#8226; Differential learning rates
-&#8226; Intermediate checkpoints		&#8226; Auto-resume training
+&#8226; Intermediate checkpoints		&#8226; Train-resuming
 </pre>
 **Need more work. Would add data-augmentation and implement better metrics to evaluate the model. The model should start see reasonable results around 10 epochs**
+### CVATDataset.ipynb
+After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebook will parse the CVAT label format(xml) and convert it to readable format by the network. We will also start using openCV to draw and save image from now on because openCV deals with pixels instead of DPI compared to PLT library. 
+### custom_data_train.ipynb
+Data is obtained by extracting images from a clip in Star Wars: Rogue One with ffmpeg. There are around 300 images and they are annotated by using CVAT. The notebook will simply overfit the model with custom data while using the darknet53 as feature extraction.
+
+**I used this notebook as sanity test for yolo_train.ipynb while I was testing the COCO dataset**
 ## TODO
   1. mAP (mean average precision)
   2. Data augmentation (blur, random flip)
