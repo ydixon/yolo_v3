@@ -226,8 +226,7 @@ class YoloNet(nn.Module):
             self.stats['recall'] = self.stats['nCorrect'] / self.stats['nGT'] if self.stats['nGT'] else 1
             return loss
         else:
-            predictions = postprocessing(torch.cat((det1,det2,det3), 1), self.numClass, obj_conf_thr=0.5, nms_thr=0.2)
-            return predictions
+            return det1, det2, det3
     
     # Format : pytorch / darknet
     def saveWeight(self, weights_path, format='pytorch'):
