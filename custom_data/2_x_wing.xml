@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<annotations>
+  <version>1.0</version>
+  <meta>
+    <task>
+      <id>2</id>
+      <name>x_wing</name>
+      <size>622</size>
+      <mode>annotation</mode>
+      <overlap>0</overlap>
+      <bugtracker></bugtracker>
+      <created>2018-08-23 19:24:24.158088+03:00</created>
+      <updated>2018-08-23 19:38:16.862444+03:00</updated>
+      <labels>
+        <label>
+          <name>x_wing,tie</name>
+          <attributes>
+          </attributes>
+        </label>
+      </labels>
+      <segments>
+        <segment>
+          <id>2</id>
+          <start>0</start>
+          <stop>621</stop>
+          <url>http://localhost:8080/?id=2</url>
+        </segment>
+      </segments>
+      <owner>
+        <username>dickson</username>
+        <email>heisenburgzero@gmail.com</email>
+      </owner>
+    </task>
+    <dumped>2018-08-23 19:38:21.646338+03:00</dumped>
+  </meta>
+  <image id="39" name="x_wing_0040.jpg">
+    <box label="x_wing,tie" xtl="45.26" ytl="82.56" xbr="828.93" ybr="385.13" occluded="0">
+    </box>
+  </image>
+  <image id="40" name="x_wing_0041.jpg">
+    <box label="x_wing,tie" xtl="30.17" ytl="89.82" xbr="813.57" ybr="417.82" occluded="0">
+    </box>
+  </image>
+  <image id="41" name="x_wing_0042.jpg">
+    <box label="x_wing,tie" xtl="15.09" ytl="97.09" xbr="798.20" ybr="450.51" occluded="0">
+    </box>
+  </image>
+  <image id="42" name="x_wing_0043.jpg">
+    <box label="x_wing,tie" xtl="0.00" ytl="104.35" xbr="782.83" ybr="483.19" occluded="0">
+    </box>
+  </image>
+  <image id="43" name="x_wing_0044.jpg">
+    <box label="x_wing,tie" xtl="0.00" ytl="104.35" xbr="765.65" ybr="480.68" occluded="0">
+    </box>
+  </image>
+  <image id="44" name="x_wing_0045.jpg">
+    <box label="x_wing,tie" xtl="0.00" ytl="104.35" xbr="748.47" ybr="478.17" occluded="0">
+    </box>
+  </image>
+  <image id="45" name="x_wing_0046.jpg">
+    <box label="x_wing,tie" xtl="0.00" ytl="110.72" xbr="775.12" ybr="474.31" occluded="0">
+    </box>
+  </image>
+  <image id="46" name="x_wing_0047.jpg">
+    <box label="x_wing,tie" xtl="0.00" ytl="117.09" xbr="801.78" ybr="470.45" occluded="0">
+    </box>
+  </image>
+  <image id="47" name="x_wing_0048.jpg">
+    <box label="x_wing,tie" xtl="0.00" ytl="123.46" xbr="828.43" ybr="466.60" occluded="0">
+    </box>
+  </image>
+  <image id="48" name="x_wing_0049.jpg">
+    <box label="x_wing,tie" xtl="0.00" ytl="129.83" xbr="855.08" ybr="462.74" occluded="0">
+    </box>
+  </image>
+  <image id="49" name="x_wing_0050.jpg">
+    <box label="x_wing,tie" xtl="0.00" ytl="136.20" xbr="881.74" ybr="458.89" occluded="0">
+    </box>
+  </image>
+  <image id="50" name="x_wing_0051.jpg">
+    <box label="x_wing,tie" xtl="578.32" ytl="219.18" xbr="742.60" ybr="284.55" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="978.12" ytl="181.46" xbr="1205.26" ybr="262.76" occluded="0">
+    </box>
+  </image>
+  <image id="51" name="x_wing_0052.jpg">
+    <box label="x_wing,tie" xtl="598.16" ytl="221.27" xbr="751.54" ybr="283.30" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="944.04" ytl="177.41" xbr="1163.08" ybr="257.31" occluded="0">
+    </box>
+  </image>
+  <image id="52" name="x_wing_0053.jpg">
+    <box label="x_wing,tie" xtl="618.00" ytl="223.37" xbr="760.48" ybr="282.04" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="909.95" ytl="173.36" xbr="1120.89" ybr="251.86" occluded="0">
+    </box>
+  </image>
+  <image id="53" name="x_wing_0054.jpg">
+    <box label="x_wing,tie" xtl="637.83" ytl="225.46" xbr="769.42" ybr="280.78" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="875.87" ytl="169.31" xbr="1078.70" ybr="246.42" occluded="0">
+    </box>
+  </image>
+  <image id="54" name="x_wing_0055.jpg">
+    <box label="x_wing,tie" xtl="657.67" ytl="227.56" xbr="778.36" ybr="279.52" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="841.78" ytl="165.26" xbr="1036.51" ybr="240.97" occluded="0">
+    </box>
+  </image>
+  <image id="55" name="x_wing_0056.jpg">
+    <box label="x_wing,tie" xtl="677.51" ytl="229.65" xbr="787.30" ybr="278.27" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="807.70" ytl="161.20" xbr="994.33" ybr="235.52" occluded="0">
+    </box>
+  </image>
+  <image id="56" name="x_wing_0057.jpg">
+    <box label="x_wing,tie" xtl="697.34" ytl="231.75" xbr="796.24" ybr="277.01" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="773.61" ytl="157.15" xbr="952.14" ybr="230.07" occluded="0">
+    </box>
+  </image>
+  <image id="57" name="x_wing_0058.jpg">
+    <box label="x_wing,tie" xtl="709.73" ytl="224.11" xbr="808.63" ybr="269.37" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="748.10" ytl="155.66" xbr="926.62" ybr="228.58" occluded="0">
+    </box>
+  </image>
+  <image id="58" name="x_wing_0059.jpg">
+    <box label="x_wing,tie" xtl="722.11" ytl="216.48" xbr="821.02" ybr="261.74" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="722.58" ytl="154.17" xbr="901.11" ybr="227.09" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="354.54" ytl="236.78" xbr="435.84" ybr="282.88" occluded="0">
+    </box>
+  </image>
+  <image id="59" name="x_wing_0060.jpg">
+    <box label="x_wing,tie" xtl="734.50" ytl="208.84" xbr="833.40" ybr="254.10" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="697.06" ytl="152.68" xbr="875.59" ybr="225.60" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="381.92" ytl="236.50" xbr="463.50" ybr="282.32" occluded="0">
+    </box>
+  </image>
+  <image id="60" name="x_wing_0061.jpg">
+    <box label="x_wing,tie" xtl="746.89" ytl="201.20" xbr="845.79" ybr="246.46" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="671.55" ytl="151.19" xbr="850.07" ybr="224.11" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="409.30" ytl="236.22" xbr="491.16" ybr="281.76" occluded="0">
+    </box>
+  </image>
+  <image id="61" name="x_wing_0062.jpg">
+    <box label="x_wing,tie" xtl="759.27" ytl="193.57" xbr="858.17" ybr="238.83" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="646.03" ytl="149.70" xbr="824.55" ybr="222.62" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="436.68" ytl="235.94" xbr="518.82" ybr="281.20" occluded="0">
+    </box>
+  </image>
+  <image id="62" name="x_wing_0063.jpg">
+    <box label="x_wing,tie" xtl="771.66" ytl="185.93" xbr="870.56" ybr="231.19" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="620.51" ytl="148.21" xbr="799.04" ybr="221.13" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="464.06" ytl="235.66" xbr="546.47" ybr="280.64" occluded="0">
+    </box>
+  </image>
+  <image id="63" name="x_wing_0064.jpg">
+    <box label="x_wing,tie" xtl="784.04" ytl="178.29" xbr="882.95" ybr="223.55" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="594.99" ytl="146.72" xbr="773.52" ybr="219.64" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="491.44" ytl="235.38" xbr="574.13" ybr="280.08" occluded="0">
+    </box>
+  </image>
+  <image id="64" name="x_wing_0065.jpg">
+    <box label="x_wing,tie" xtl="796.43" ytl="170.66" xbr="895.33" ybr="215.92" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="569.48" ytl="145.23" xbr="748.00" ybr="218.15" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="518.82" ytl="235.10" xbr="601.79" ybr="279.52" occluded="0">
+    </box>
+  </image>
+  <image id="65" name="x_wing_0066.jpg">
+    <box label="x_wing,tie" xtl="808.82" ytl="163.02" xbr="907.72" ybr="208.28" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="543.96" ytl="143.74" xbr="722.49" ybr="216.66" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="548.15" ytl="232.59" xbr="631.13" ybr="277.01" occluded="0">
+    </box>
+  </image>
+  <image id="66" name="x_wing_0067.jpg">
+    <box label="x_wing,tie" xtl="810.91" ytl="151.71" xbr="909.81" ybr="196.97" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="524.12" ytl="145.42" xbr="702.65" ybr="218.34" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="577.49" ytl="230.07" xbr="660.46" ybr="274.49" occluded="0">
+    </box>
+  </image>
+  <image id="67" name="x_wing_0068.jpg">
+    <box label="x_wing,tie" xtl="813.01" ytl="140.39" xbr="911.91" ybr="185.65" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="504.29" ytl="147.10" xbr="682.81" ybr="220.01" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="606.82" ytl="227.56" xbr="689.80" ybr="271.98" occluded="0">
+    </box>
+  </image>
+  <image id="68" name="x_wing_0069.jpg">
+    <box label="x_wing,tie" xtl="819.71" ytl="128.66" xbr="918.61" ybr="173.92" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="484.45" ytl="148.77" xbr="662.98" ybr="221.69" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="636.16" ytl="225.04" xbr="719.13" ybr="269.47" occluded="0">
+    </box>
+  </image>
+  <image id="69" name="x_wing_0070.jpg">
+    <box label="x_wing,tie" xtl="484.45" ytl="148.77" xbr="662.98" ybr="221.69" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="664.65" ytl="218.34" xbr="747.63" ybr="262.76" occluded="0">
+    </box>
+  </image>
+  <image id="70" name="x_wing_0071.jpg">
+    <box label="x_wing,tie" xtl="486.55" ytl="150.45" xbr="652.29" ybr="216.03" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="690.22" ytl="213.31" xbr="768.17" ybr="254.38" occluded="0">
+    </box>
+  </image>
+  <image id="71" name="x_wing_0072.jpg">
+    <box label="x_wing,tie" xtl="488.64" ytl="152.12" xbr="641.61" ybr="210.38" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="715.78" ytl="208.28" xbr="788.70" ybr="246.00" occluded="0">
+    </box>
+  </image>
+  <image id="72" name="x_wing_0073.jpg">
+    <box label="x_wing,tie" xtl="490.74" ytl="153.80" xbr="630.92" ybr="204.72" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="741.35" ytl="203.25" xbr="809.24" ybr="237.62" occluded="0">
+    </box>
+  </image>
+  <image id="73" name="x_wing_0074.jpg">
+    <box label="x_wing,tie" xtl="492.83" ytl="155.48" xbr="620.23" ybr="199.06" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="766.91" ytl="198.22" xbr="829.77" ybr="229.23" occluded="0">
+    </box>
+  </image>
+  <image id="74" name="x_wing_0075.jpg">
+    <box label="x_wing,tie" xtl="502.89" ytl="150.45" xbr="623.58" ybr="193.19" occluded="0">
+    </box>
+    <box label="x_wing,tie" xtl="787.86" ytl="193.19" xbr="850.72" ybr="224.21" occluded="0">
+    </box>
+  </image>
+</annotations>
