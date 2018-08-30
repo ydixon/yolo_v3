@@ -53,12 +53,14 @@ Building up on previous notebooks, this notebook implements the back-propagation
 </pre>
 **Need more work. Would add data-augmentation and implement better metrics to evaluate the model. The model should start see reasonable results around 10 epochs**
 ### CVATDataset.ipynb
-After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebook will parse the CVAT label format(xml) and convert it to readable format by the network. We will also start using openCV to draw and save image from now on because openCV deals with pixels instead of DPI compared to PLT library. 
+After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebook will parse the CVAT label format(xml) and convert it to readable format by the network. We will also start using openCV to draw and save image because **openCV** deals with pixels instead of DPI compared to **PLT** library which is more convenient. 
 ### custom_data_train.ipynb
-Data is obtained by extracting images from a clip in Star Wars: Rogue One with ffmpeg. There are around 300 images and they are annotated by using CVAT. The notebook will simply overfit the model with custom data while using the darknet53 as feature extraction.
+Data is obtained by extracting images from a clip in **Star Wars: Rogue One** with ffmpeg. There are around 300 images and they are annotated by using CVAT. The notebook will simply overfit the model with custom data while using the darknet53 as feature extraction.
 
-**I used this notebook as sanity test for yolo_train.ipynb while I was testing the COCO dataset**
+**I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
 ## TODO
+**2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**
+
   1. mAP (mean average precision)
   2. Data augmentation (blur, random flip)
   3. Implement backhook for YoloNet branching
