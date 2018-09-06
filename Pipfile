@@ -6,15 +6,6 @@ name = "pypi"
 [dev-packages]
 
 [packages]
-jupyter = "*"
-ipykernel = "*"
-pandas = "*"
-torch = "==0.4.0"
-torchvision = "*"
-matplotlib = "*"
-tqdm = "*"
-opencv-contrib-python = "*"
-lxml = "*"
 
 [requires]
 python_version = "3.6"
