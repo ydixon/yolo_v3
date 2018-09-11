@@ -13,9 +13,6 @@ from darknet import YoloNet
 from draw import cv2_drawTextWithBkgd, get_color_pallete
 
 
-
-
-
 def train(dataloader, net, num_epoch,
           lr, backbone_lr, wd=0, momentum=0,
           lr_step_decay=0, lr_step_gamma=0,
@@ -54,7 +51,7 @@ def train_impl(num_epoch, dataloader, net, optimizer, scheduler,
                 net.train(False)
             pbar = create_batch_progressbar(dataloader[phase])
             for batch, sample in enumerate(pbar):
-                inp, labels = sample['letterbox_img'], sample['label']
+                inp, labels = sample['img'], sample['label']
                 if use_gpu:
                     inp, labels = inp.cuda(), labels.cuda()
                 
