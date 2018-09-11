@@ -4,6 +4,7 @@ from torch import Tensor
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 import cv2
+from enum import Enum
 
 def letterbox_label(label, transform, dim):
     label_x_offset = transform[..., 2] / dim[0]
@@ -179,8 +180,9 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4):
     detections[:,:,:4] = box
     
     num_batches = detections.shape[0]
-    results = torch.Tensor().cuda()
-    
+    #results = torch.Tensor().to(device)
+    results = list()
+        
     for b in range(num_batches):
         batch_results = torch.Tensor().cuda()
         img_det = detections[b]
@@ -196,8 +198,10 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4):
         #Remove zeroed rows
         nonzero_idx =  img_det[:,4].nonzero()
         img_det = img_det[nonzero_idx,:].view(-1,7)
-        
-        if img_det.shape[0] != 0:
+               
+        if img_det.shape[0] == 0:
+            results.append(batch_results)
+        else:
             #Get the classes
             img_classes = torch_unique(img_det[:,-1])
             for c in img_classes:
@@ -214,10 +218,7 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4):
                 class_img_det = nms(class_img_det, iou, nms_thr)
                 batch_results = torch.cat((batch_results, class_img_det), 0)
 
-            num_dets = batch_results.shape[0]
-            batch_col = results.new_full((num_dets, 1), b)
-            batch_results = torch.cat((batch_col, batch_results), 1)
-            results = torch.cat((results, batch_results), 0)
+            results.append(batch_results)
     
     return results
 
@@ -247,3 +248,16 @@ def bbox_cxcywh_to_xywh(box):
     x, y = box[..., 0] - box[..., 2] / 2, box[..., 1] - box[..., 3] / 2
     box[..., 0], box[..., 1] = x, y
     return box
+
+# Types
+
+class BoundingBoxType():
+
+	class CoordinateType(Enum):
+		Relative = 0
+		Absolute = 1
+
+	class FormatType(Enum):
+		x1y1x2y2 = 0
+		cxcywh = 1
+		xywh = 2
