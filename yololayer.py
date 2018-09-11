@@ -1,5 +1,3 @@
-
-
 import torch
 import torch.nn as nn
 from utils import bbox_iou
@@ -125,8 +123,8 @@ class YoloLayer(nn.Module):
                 gi = int(gx)
                 gj = int(gy)
 
-                #preds - [bs x A x W x H x (5+C)]  
-                tmp_gt_boxes = torch.FloatTensor([gx, gy, gw, gh])
+                #preds - [bs x A x W x H x 4]  
+                tmp_gt_boxes = torch.FloatTensor([gx, gy, gw, gh]).unsqueeze(0)
                 tmp_pred_boxes = preds[b].view(-1, 4)
                 tmp_ious, _ = torch.max(bbox_iou(tmp_pred_boxes, tmp_gt_boxes, mode="cxcywh"), 1)
                 ignore_idx = (tmp_ious > ignore_thres).view(nA, nH, nW)
@@ -157,7 +155,7 @@ class YoloLayer(nn.Module):
         return obj_mask, noobj_mask, tconf, tcls, tx, ty, tw, th, nCorrect, nGT
 
 
-
+# Legacy version with no back-propagation
 class YoloLayer_forward(nn.Module):
     def __init__(self, anchors, numClass):
         super().__init__()
