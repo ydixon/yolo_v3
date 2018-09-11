@@ -12,6 +12,7 @@ This repository aims to create a YoloV3 detector in **Pytorch** and **Jupyter No
  - Pytorch 0.4.0
  - Jupyter Notebook 5.4.0
  - OpenCV 3.4.0
+ - imgaug 0.2.6
  - Cuda Support
 
 ## Instructions
@@ -36,6 +37,10 @@ This notebook takes you through the steps of building the darknet53 backbone net
 &#8226; Weight Loading				&#8226; Bounding Box Drawing
 &#8226; IOU - Jaccard Overlap				&#8226; Non-max suppression (NMS)
 </pre>
+### Data_Augmentation.ipynb
+Simple demo of [imgaug](https://github.com/aleju/imgaug) augmentations functions such as Gaussian Noises, blurring, sharpening effect, etc. This notebook will also introduce a **Compose** class that allows us to construct sequences of data-transforms. The applications of techniques in this notebook could be found in **COCODataset.ipynb** and **CVATDataset.ipynb**.
+
+**TODO: Random Crop, Rotation, Random Flip**
 ### COCODataset.ipynb
 Shows how to parse the COCO dataset that follows the format that was used in the original darknet implementation .
 <pre>
@@ -51,7 +56,7 @@ Building up on previous notebooks, this notebook implements the back-propagation
 &#8226; Loss function				&#8226; Differential learning rates
 &#8226; Intermediate checkpoints		&#8226; Train-resuming
 </pre>
-**Need more work. Would add data-augmentation and implement better metrics to evaluate the model. The model should start see reasonable results around 10 epochs**
+**Need more work. Would add data-augmentation and implement better metrics to evaluate the model. The model should start seeing reasonable results after 10 epochs**
 ### CVATDataset.ipynb
 After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebook will parse the CVAT label format(xml) and convert it to readable format by the network. We will also start using openCV to draw and save image because **openCV** deals with pixels instead of DPI compared to **PLT** library which is more convenient. 
 ### custom_data_train.ipynb
@@ -60,15 +65,14 @@ Data is obtained by extracting images from a clip in **Star Wars: Rogue One** wi
 **I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
 ## TODO
 **2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**
+**2018/9/11: Adapt data augmentations**
 
   1. mAP (mean average precision)
-  2. Data augmentation (blur, random flip)
+  2. Data augmentation (random crop, rotate)
   3. Implement backhook for YoloNet branching
-  4. Color palette for bounding boxes
-  5. Imaging saving
-  6. Feed Video to detector
-  7. Fix possible CUDA memory leaks
-  8. Fix class and variable names
+  5. Feed Video to detector
+  6. Fix possible CUDA memory leaks
+  7. Fix class and variable names
 
 
 ## References
@@ -79,3 +83,4 @@ Data is obtained by extracting images from a clip in **Star Wars: Rogue One** wi
 4. [Pytorch Implementation of Yolo V3](https://github.com/ayooshkathuria/pytorch-yolo-v3)
 5. [Deep Pyramidal Residual Networks](https://arxiv.org/abs/1610.02915)
 6. [eriklindernoren's Repo](https://github.com/eriklindernoren/PyTorch-YOLOv3)
+7. [BobLiu20's Repo](https://github.com/BobLiu20/YOLOv3_PyTorch)
