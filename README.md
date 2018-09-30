@@ -65,6 +65,7 @@ Data is obtained by extracting images from a clip in **Star Wars: Rogue One** wi
 **I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
 ## TODO
 **2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**
+
 **2018/9/11: Adapt data augmentations**
 
   1. mAP (mean average precision)
