@@ -12,19 +12,19 @@ class YoloLayer(nn.Module):
         self.numClass = numClass
         self.bbox_attrib = 5 + numClass
         
-        
-        self.lambda_xy = 2.5
-        self.lambda_wh = 2.5
+        self.lambda_xy = 1
+        self.lambda_wh = 1
         self.lambda_conf = 1 #1.0
         self.lambda_cls = 1 #1.0
         
         self.obj_scale = 1 #5
-        self.noobj_scale = 0.5 #1
+        self.noobj_scale = 1 #1
         
         self.ignore_thres = 0.5
         
-        self.mseloss = nn.MSELoss()
-        self.bceloss = nn.BCELoss()
+        self.mseloss = nn.MSELoss(size_average=False)
+        self.bceloss = nn.BCELoss(size_average=False)
+        self.bceloss_average = nn.BCELoss(size_average=True)
         
         self.training = False
  
@@ -40,7 +40,7 @@ class YoloLayer(nn.Module):
         preds = x.view(nB, nA, self.bbox_attrib, nH, nW).permute(0, 1, 3, 4, 2).contiguous()
         
         # tx, ty, tw, wh
-        preds_xy = preds[..., :2].sigmoid()
+        preds_xy = preds[..., :2]
         preds_wh = preds[..., 2:4]
         preds_conf = preds[..., 4].sigmoid()
         preds_cls = preds[..., 5:].sigmoid()
@@ -53,7 +53,7 @@ class YoloLayer(nn.Module):
         
         # pred_boxes holds bx,by,bw,bh
         pred_boxes = torch.FloatTensor(preds[..., :4].shape)
-        pred_boxes[..., :2] = preds_xy.cpu().detach() + mesh_xy # sig(tx) + cx
+        pred_boxes[..., :2] = preds_xy.sigmoid().cpu().detach() + mesh_xy # sig(tx) + cx
         pred_boxes[..., 2:4] = preds_wh.cpu().detach().exp() * mesh_anchors  # exp(tw) * anchor
         
         if target is not None:
@@ -69,15 +69,16 @@ class YoloLayer(nn.Module):
             tconf, tcls = tconf.cuda(), tcls.cuda()
             tx, ty, tw, th = tx.cuda(), ty.cuda(), tw.cuda(), th.cuda()
 
-            loss_x = self.lambda_xy * self.bceloss(preds_xy[..., 0] * obj_mask, tx * obj_mask)
-            loss_y = self.lambda_xy * self.bceloss(preds_xy[..., 1] * obj_mask, ty * obj_mask)
-            loss_w = self.lambda_wh * self.mseloss(preds_wh[..., 0] * obj_mask, tw * obj_mask) / 2
-            loss_h = self.lambda_wh * self.mseloss(preds_wh[..., 1] * obj_mask, th * obj_mask) / 2
+            loss_x = self.lambda_xy * self.mseloss(preds_xy[..., 0] * obj_mask, tx * obj_mask) / nB
+            loss_y = self.lambda_xy * self.mseloss(preds_xy[..., 1] * obj_mask, ty * obj_mask) / nB
+            loss_w = self.lambda_wh * self.mseloss(preds_wh[..., 0] * obj_mask, tw * obj_mask) / nB
+            loss_h = self.lambda_wh * self.mseloss(preds_wh[..., 1] * obj_mask, th * obj_mask) / nB
+
             loss_conf = self.lambda_conf * \
                         ( self.obj_scale * self.bceloss(preds_conf * obj_mask, obj_mask) + \
-                          self.noobj_scale * self.bceloss(preds_conf * noobj_mask, noobj_mask * 0) )
-            loss_cls = self.lambda_cls * self.bceloss(preds_cls[cls_mask], tcls[cls_mask])
-            loss =  loss_x + loss_y + loss_w + loss_h + loss_conf + loss_cls
+                          self.noobj_scale * self.bceloss(preds_conf * noobj_mask, noobj_mask * 0) ) / nB
+            loss_cls = self.lambda_cls * self.bceloss(preds_cls[cls_mask], tcls[cls_mask]) / nB
+            loss =  loss_x + loss_y + loss_w + loss_h + loss_conf + loss_cls 
                 
             return loss, loss.item(), loss_x.item(), loss_y.item(), loss_w.item(), loss_h.item(), \
                    loss_conf.item(), loss_cls.item(), \
@@ -123,7 +124,8 @@ class YoloLayer(nn.Module):
                 gi = int(gx)
                 gj = int(gy)
 
-                #preds - [bs x A x W x H x 4]  
+                # preds - [A x W x H x 4]  
+                # Do not train for objectness(noobj) if anchor iou > threshold.
                 tmp_gt_boxes = torch.FloatTensor([gx, gy, gw, gh]).unsqueeze(0)
                 tmp_pred_boxes = preds[b].view(-1, 4)
                 tmp_ious, _ = torch.max(bbox_iou(tmp_pred_boxes, tmp_gt_boxes, mode="cxcywh"), 1)
@@ -147,8 +149,10 @@ class YoloLayer(nn.Module):
                 obj_mask[b, best_anchor, gj, gi] = 1
                 tconf[b, best_anchor, gj, gi] = 1
                 tcls[b, best_anchor, gj, gi, int(target[b, t, 0])] = 1
-                tx[b, best_anchor, gj, gi] = gx - gi
-                ty[b, best_anchor, gj, gi] = gy - gj
+                sig_x = gx - gi
+                sig_y = gy - gj
+                tx[b, best_anchor, gj, gi] = torch.log(sig_x/(1-sig_x) + 1e-16)
+                ty[b, best_anchor, gj, gi] = torch.log(sig_y/(1-sig_y) + 1e-16)
                 tw[b, best_anchor, gj, gi] = torch.log(gw / anchors[best_anchor, 0] + 1e-16)
                 th[b, best_anchor, gj, gi] = torch.log(gh / anchors[best_anchor, 1] + 1e-16)
 
