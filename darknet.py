@@ -105,7 +105,7 @@ class Darknet(nn.Module):
 
 
 class PreDetectionConvGroup(nn.Module):
-    def __init__(self, nin, nout, num_conv=3):
+    def __init__(self, nin, nout, num_conv=3, numClass=80):
         super().__init__()
         self.mlist = nn.ModuleList()
         
@@ -115,7 +115,7 @@ class PreDetectionConvGroup(nn.Module):
             if i == 0:
                 nin = nout*2
                 
-        self.mlist += [nn.Conv2d(nin, 255, 1)]
+        self.mlist += [nn.Conv2d(nin, (numClass+5)*3, 1)]
         self.map2yolocfg = map2cfgDict(self.mlist)
         self.cachedOutDict = dict()
         
@@ -164,10 +164,10 @@ class UpsampleGroup(nn.Module):
 
 
 class YoloNet(nn.Module):
-    def __init__(self, img_dim, anchors = [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]):
+    def __init__(self, img_dim, anchors = [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326], numClass=80):
         super().__init__()
         nin = 32
-        self.numClass = 80
+        self.numClass = numClass
         self.img_dim = img_dim
         self.stat_keys = ['loss', 'loss_x', 'loss_y', 'loss_w', 'loss_h', 'loss_conf', 'loss_cls',
                           'nCorrect', 'nGT', 'recall']
@@ -179,17 +179,17 @@ class YoloNet(nn.Module):
         self.feature.addCachedOut(61)
         self.feature.addCachedOut(36)
         
-        self.pre_det1 = PreDetectionConvGroup(1024, 512)
+        self.pre_det1 = PreDetectionConvGroup(1024, 512, numClass=self.numClass)
         self.yolo1 = YoloLayer(anchors[0], img_dim, self.numClass)
         self.pre_det1.addCachedOut(-3) #Fetch output from 4th layer backward including yolo layer
         
         self.up1 = UpsampleGroup(512)
-        self.pre_det2 = PreDetectionConvGroup(768, 256)
+        self.pre_det2 = PreDetectionConvGroup(768, 256, numClass=self.numClass)
         self.yolo2 = YoloLayer(anchors[1], img_dim, self.numClass)
         self.pre_det2.addCachedOut(-3)
         
         self.up2 = UpsampleGroup(256)
-        self.pre_det3 = PreDetectionConvGroup(384, 128)
+        self.pre_det3 = PreDetectionConvGroup(384, 128, numClass=self.numClass)
         self.yolo3 = YoloLayer(anchors[2], img_dim, self.numClass)
         
         
