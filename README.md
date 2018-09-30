@@ -43,7 +43,7 @@ Show case augmentations used by the darknet cfg file including `hue`, `saturatio
 
 Augmentation | Description | Parameter |
 --- | --- | --- |
-Random Crop | +/- 10% (top, right, bottom, left) | `jitter`, `random`
+Random Crop | 0 ~ 30% (top, right, bottom, left) | `jitter`, `random`
 Letterbox | Keep aspect ratio resize, pad with gray color | N/A
 Horizontal Flip | 50% chance | N/A
 **H**SV Hue | Add +/- `179 * hue` | `hue` 
