@@ -40,6 +40,7 @@ This notebook takes you through the steps of building the darknet53 backbone net
 </pre>
 ### Data_Augmentation.ipynb
 Show case augmentations used by the darknet cfg file including `hue`, `saturation`, `exposure`, `jitter` parameters. Also demo additional augmentations that could be used for different kinds of datasets such as `rotation`, `shear`, `zoom`, `Gaussian noises`, `blurring`, `sharpening effect`, etc. Most of the augmentations would be powered by the [imgaug](https://github.com/aleju/imgaug) library. This notebook will also show how to integrate these augmentations into Pytorch datasets. 
+
 Augmentation | Description | Parameter |
 --- | --- | --- |
 Random Crop | +/- 10% (top, right, bottom, left) | `jitter`, `random`
@@ -64,17 +65,18 @@ Building up on previous notebooks, this notebook implements the back-propagation
 &#8226; Loss function				&#8226; Differential learning rates
 &#8226; Intermediate checkpoints		&#8226; Train-resuming
 </pre>
-**Updated to use mseloss for tx, ty. This should improve training performance**
+**Updated to use mseloss for tx, ty. This should improve training performance.**
+### yolo_train_short.ipynb
+Minimal version of **yolo_train.ipynb**. You can use this notebook if you are only interested in testing with different datasets/augmentations/loss functions.
 ### CVATDataset.ipynb
 After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebook will parse the CVAT label format(xml) and convert it to readable format by the network. We will also start using openCV to draw and save image because **openCV** deals with pixels instead of DPI compared to **PLT** library which is more convenient. 
 ### custom_data_train.ipynb
-Data is obtained by extracting images from a clip in **Star Wars: Rogue One** with ffmpeg. There are around 300 images and they are annotated by using CVAT. The notebook will simply overfit the model with custom data while using the darknet53 as feature extraction.
-
-**I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
+Data is obtained by extracting images from a clip in **Star Wars: Rogue One** with ffmpeg. There are around 300 images and they are annotated by using CVAT. The notebook will simply overfit the model with custom data while using the darknet53 as feature extraction.  
+**P.S I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
 ## TODO
-**2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**
-**2018/9/11: Adapt data augmentations**
-**2018/9/30: New loss function. Adapt darknet cfg augmentations parameters**
+**2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**  
+**2018/9/11: Adapt data augmentations**  
+**2018/9/30: New loss function. Adapt darknet cfg augmentations parameters**  
 
   1. mAP (mean average precision)
   2. Implement backhook for YoloNet branching
