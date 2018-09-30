@@ -9,8 +9,11 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 
+import numpy as np
+
 from darknet import YoloNet
 from draw import cv2_drawTextWithBkgd, get_color_pallete
+import imgaug as ia
 
 
 def train(dataloader, net, num_epoch,
@@ -59,6 +62,8 @@ def train_impl(num_epoch, dataloader, net, optimizer, scheduler,
                 
                 loss = net(inp, labels)
                 loss.backward()
+
+                nn.utils.clip_grad_norm_(net.parameters(), 1000)
                 
                 optimizer.step()
                 
@@ -67,6 +72,8 @@ def train_impl(num_epoch, dataloader, net, optimizer, scheduler,
                                       batch_datasize)
                 
                 update_batch_progressbar(pbar, epoch, recorder)
+                # Temporary hack, need to call seq.deterministic on each batch if done properly
+                ia.seed(np.random.randint(0, 2**16))
 
             print_stats(epoch, recorder)
             if ((epoch+1) % 20) == 0:
@@ -131,7 +138,7 @@ class Recorder:
         self.acc_stats = {k: self.acc_stats[k] + batch_stats[k] for k in self.acc_keys}
         self.acc_datasize += batch_datasize
         
-        self.eval_stats['recall'] = self.acc_stats['nCorrect'] / self.acc_stats['nGT']
+        self.eval_stats['recall'] = self.acc_stats['nCorrect'] / self.acc_stats['nGT'] if self.acc_stats['nGT'] else 0
         self.current_stats.update({k: self.acc_stats[k] / self.acc_datasize for k in self.loss_keys}) 
         self.current_stats.update(self.eval_stats)
  
