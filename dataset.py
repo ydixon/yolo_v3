@@ -25,9 +25,8 @@ import numpy as np
 from lxml import etree
 
 import utils
-from utils import load_image, letterbox_image, \
-				  letterbox_label, letterbox_label_reverse, \
-				  bbox_x1y1x2y2_to_xywh, bbox_x1y1x2y2_to_cxcywh, bbox_cxcywh_to_x1y1x2y2, bbox_cxcywh_to_xywh
+from boundingbox import bbox_x1y1x2y2_to_xywh, bbox_x1y1x2y2_to_cxcywh, bbox_cxcywh_to_x1y1x2y2, bbox_cxcywh_to_xywh, \
+                        bbox_xywh_to_cxcywh, bbox_xywh_to_x1y1x2y2, CoordinateType, FormatType, BoundingBoxConverter
 import transforms			
 
 class COCODataset(Dataset):
@@ -98,6 +97,7 @@ class CVATDataset(Dataset):
         
         sample = { 'img': img, 'org_img': img.copy(), 'label': label, 'transform': None, 'img_path': img_path }
         sample = self.transform(sample)
+
         return sample
 
 def get_xml_labels(xml_path):

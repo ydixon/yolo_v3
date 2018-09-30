@@ -66,7 +66,7 @@ def load_image(img_path, mode=None, dim=None):
             img = cv2.resize(img, dim)
     
     img = torch.from_numpy(img).float().permute(2,0,1) / 255
-    return img, img_org_dim, trans
+    return img, trans
 
 
 def torch_unique(inp, CUDA=True):
@@ -222,42 +222,8 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4):
     
     return results
 
-# Bounding box transforms
-
-def bbox_x1y1x2y2_to_xywh(box):
-    bx, by = box[..., 0], box[..., 1]
-    bw = box[..., 2] - box[..., 0]
-    bh = box[..., 3] - box[..., 1]
-    box[..., 0], box[..., 1], box[..., 2], box[..., 3] = bx, by, bw, bh
-    return box
-
-def bbox_x1y1x2y2_to_cxcywh(box):
-    bw = box[..., 2] - box[..., 0]
-    bh = box[..., 3] - box[..., 1]
-    cx, cy = box[..., 0] + bw / 2, box[..., 1] + bh / 2
-    box[..., 0], box[..., 1], box[..., 2], box[..., 3] = cx, cy, bw, bh
-    return box
-
-def bbox_cxcywh_to_x1y1x2y2(box):
-    x1, x2 = box[..., 0] - box[..., 2] / 2, box[..., 0] + box[..., 2] / 2
-    y1, y2 = box[..., 1] - box[..., 3] / 2, box[..., 1] + box[..., 3] / 2
-    box[..., 0], box[..., 1], box[..., 2], box[..., 3] = x1, y1, x2, y2
-    return box
-
-def bbox_cxcywh_to_xywh(box):
-    x, y = box[..., 0] - box[..., 2] / 2, box[..., 1] - box[..., 3] / 2
-    box[..., 0], box[..., 1] = x, y
-    return box
-
-# Types
-
-class BoundingBoxType():
-
-	class CoordinateType(Enum):
-		Relative = 0
-		Absolute = 1
-
-	class FormatType(Enum):
-		x1y1x2y2 = 0
-		cxcywh = 1
-		xywh = 2
+def get_image_shape(img):
+    if isinstance(img, tuple):
+        return img
+    else:
+        return img.shape[1], img.shape[0]
