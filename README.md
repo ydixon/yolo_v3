@@ -1,4 +1,5 @@
 
+
 # YoloV3 in Pytorch and Jupyter Notebook
 <p align="center">
   <img width="630" height="350" src="x_wing.gif">
@@ -38,9 +39,16 @@ This notebook takes you through the steps of building the darknet53 backbone net
 &#8226; IOU - Jaccard Overlap				&#8226; Non-max suppression (NMS)
 </pre>
 ### Data_Augmentation.ipynb
-Simple demo of [imgaug](https://github.com/aleju/imgaug) augmentations functions such as Gaussian Noises, blurring, sharpening effect, etc. This notebook will also introduce a **Compose** class that allows us to construct sequences of data-transforms. The applications of techniques in this notebook could be found in **COCODataset.ipynb** and **CVATDataset.ipynb**.
+Show case augmentations used by the darknet cfg file including `hue`, `saturation`, `exposure`, `jitter` parameters. Also demo additional augmentations that could be used for different kinds of datasets such as `rotation`, `shear`, `zoom`, `Gaussian noises`, `blurring`, `sharpening effect`, etc. Most of the augmentations would be powered by the [imgaug](https://github.com/aleju/imgaug) library. This notebook will also show how to integrate these augmentations into Pytorch datasets. 
+Augmentation | Description | Parameter |
+--- | --- | --- |
+Random Crop | +/- 10% (top, right, bottom, left) | `jitter`, `random`
+Letterbox | Keep aspect ratio resize, pad with gray color | N/A
+Horizontal Flip | 50% chance | N/A
+**H**SV Hue | Add +/- `179 * hue` | `hue` 
+H**S**V Saturation | Multiply `1/sat` ~ `sat` | `saturation`
+HS**V** Exposure | Multiply `1/exposure` ~ `exposure` |`exposure`
 
-**TODO: Random Crop, Rotation, Random Flip**
 ### COCODataset.ipynb
 Shows how to parse the COCO dataset that follows the format that was used in the original darknet implementation .
 <pre>
@@ -56,7 +64,7 @@ Building up on previous notebooks, this notebook implements the back-propagation
 &#8226; Loss function				&#8226; Differential learning rates
 &#8226; Intermediate checkpoints		&#8226; Train-resuming
 </pre>
-**Need more work. Would add data-augmentation and implement better metrics to evaluate the model. The model should start seeing reasonable results after 10 epochs**
+**Updated to use mseloss for tx, ty. This should improve training performance**
 ### CVATDataset.ipynb
 After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebook will parse the CVAT label format(xml) and convert it to readable format by the network. We will also start using openCV to draw and save image because **openCV** deals with pixels instead of DPI compared to **PLT** library which is more convenient. 
 ### custom_data_train.ipynb
@@ -65,15 +73,14 @@ Data is obtained by extracting images from a clip in **Star Wars: Rogue One** wi
 **I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
 ## TODO
 **2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**
-
 **2018/9/11: Adapt data augmentations**
+**2018/9/30: New loss function. Adapt darknet cfg augmentations parameters**
 
   1. mAP (mean average precision)
-  2. Data augmentation (random crop, rotate)
-  3. Implement backhook for YoloNet branching
-  5. Feed Video to detector
-  6. Fix possible CUDA memory leaks
-  7. Fix class and variable names
+  2. Implement backhook for YoloNet branching
+  3. Feed Video to detector
+  4. Fix possible CUDA memory leaks
+  5. Fix class and variable names
 
 
 ## References
