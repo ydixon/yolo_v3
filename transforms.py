@@ -143,7 +143,7 @@ def iaa_hsv_aug(hue=0, saturation=1, exposure=1):
         int sheight = oh - ptop - pbot; 
 """
 def iaa_random_crop(jitter):
-    return iaa.Sequential([iaa.Crop(None, ((-jitter,jitter),(-jitter,jitter), (-jitter,jitter), (-jitter,jitter)), keep_size=False)])
+    return iaa.Sequential([iaa.CropAndPad(None, ((-jitter,jitter),(-jitter,jitter), (-jitter,jitter), (-jitter,jitter)), keep_size=False, pad_cval=128)])
 
 def iaa_letterbox(img, new_dim):
     if isinstance(img, tuple):
