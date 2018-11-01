@@ -42,6 +42,28 @@ def show_img(im, figsize=None, ax=None):
     ax.get_yaxis().set_visible(False)
     return ax
 
+def show_img_grid(img_list, cols=2):
+    rows = len(img_list) // cols
+    fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(20, 100))
+    axes = [ax for row in axes for ax in row]
+    
+    for ax, img in zip(axes, img_list):
+        ax.imshow(img, shape=(2,2), aspect='equal')
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+   
+    plt.tight_layout()
+
+# Combine images to one image
+def getImgGrid(img_list, cols=2):
+    num_img, height, width, channel = img_list.shape
+    rows = num_img // cols
+    # target = (height * rows, width * cols, channel)
+    grid = img_list.reshape(rows, cols, height, width, channel)\
+                    .transpose(0, 2, 1, 3, 4)\
+                    .reshape(height * rows, width * cols, channel)
+    return grid
+
 def get_color_pallete(num_color):
     cmap = plt.get_cmap('tab20b')
     colors = torch.Tensor([cmap(i) for i in np.linspace(0, 1, num_color)])
