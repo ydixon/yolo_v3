@@ -5,6 +5,7 @@ import glob
 import re
 from tqdm import tqdm
 from collections import OrderedDict
+from collections import Counter
 
 import torch
 import torch.nn as nn
@@ -17,32 +18,39 @@ import imgaug as ia
 
 
 def train(dataloader, net, num_epoch,
-          lr, backbone_lr, wd=0, momentum=0,
+          lr, backbone_lr, wd=0, momentum=0, freeze_backbone=False,
           lr_step_decay=0, lr_step_gamma=0,
+          net_bs=64, net_subdivisions=4,
           model_id='test', start_epoch=0, weight_dir=None, checkpoint_interval=1,
           resume_checkpoint=None, use_gpu=True):
     
-    optimizer = get_optimizer(net, lr, backbone_lr, wd, momentum)
+    optimizer = get_optimizer(net, lr, backbone_lr, wd, momentum, freeze_backbone)
     if not (lr_step_decay == 0 and lr_step_gamma == 0):
         scheduler = lr_scheduler.StepLR(optimizer, lr_step_decay, lr_step_gamma)
     else:
-        scheduler = None
+        scheduler = None                     
     
     if resume_checkpoint is not None:
         net.load_state_dict(resume_checkpoint['net'])
-        optimizer.load_state_dict(resume_checkpoint['optimizer'])
+        optimizer = load_optimizer(optimizer, resume_checkpoint['optimizer'])
         if scheduler is not None:
             scheduler.load_state_dict(resume_checkpoint['scheduler'])
         start_epoch = resume_checkpoint['epoch'] + 1
     
     train_impl(num_epoch, dataloader, net, optimizer, scheduler,
+               net_bs, net_subdivisions,
                model_id, start_epoch, weight_dir, checkpoint_interval,
                use_gpu)
 
-
 def train_impl(num_epoch, dataloader, net, optimizer, scheduler,
+               net_bs=64, net_subdivisions=4,
                model_id='test', start_epoch=0, weight_dir=None, checkpoint_interval=1,
                use_gpu=True):
+    mini_batch_size = net_bs / net_subdivisions
+
+    batch_datasize = 0
+    batch_stats = []
+    optimizer.zero_grad()
     recorder = Recorder()
     
     print_stats_header()
@@ -53,25 +61,32 @@ def train_impl(num_epoch, dataloader, net, optimizer, scheduler,
             else:
                 net.train(False)
             pbar = create_batch_progressbar(dataloader[phase])
-            for batch, sample in enumerate(pbar):
+            for batch_idx, sample in enumerate(pbar):
                 inp, labels = sample['img'], sample['label']
                 if use_gpu:
                     inp, labels = inp.cuda(), labels.cuda()
                 
-                optimizer.zero_grad()
-                
+                              
                 loss = net(inp, labels)
+                loss = loss / net_subdivisions
                 loss.backward()
+                
+                batch_stats.append(net.stats)
+                batch_datasize += inp.shape[0] 
 
                 nn.utils.clip_grad_norm_(net.parameters(), 1000)
-                
-                optimizer.step()
-                
-                batch_datasize = inp.shape[0]
-                recorder.on_batch_end({k: net.stats[k] for k in recorder.acc_keys if k in net.stats},
-                                      batch_datasize)
-                
-                update_batch_progressbar(pbar, epoch, recorder)
+
+                if ((batch_idx+1) % net_subdivisions == 0) or (batch_idx == (len(pbar) - 1)):
+                    optimizer.step()
+                    optimizer.zero_grad()
+
+                    stats = {k: sum([d[k] for d in batch_stats]) / net_subdivisions for k in net.stat_keys}
+                    recorder.on_batch_end({k: stats[k] for k in recorder.acc_keys if k in stats},
+                                          batch_datasize)
+                    
+                    update_batch_progressbar(pbar, epoch, recorder)
+                    batch_datasize = 0
+                    batch_stats = []
                 # Temporary hack, need to call seq.deterministic on each batch if done properly
                 ia.seed(np.random.randint(0, 2**16))
 
@@ -90,14 +105,28 @@ def train_impl(num_epoch, dataloader, net, optimizer, scheduler,
     optimizer.zero_grad()
 
 
-def get_optimizer(net, lr, backbone_lr, wd, momentum):
+def load_optimizer(optimizer, state_dict):
+    if len(optimizer.state_dict()) != len(state_dict):
+        optimizer.load_state_dict(state_dict)
+    else:
+        return optimizer
+
+def get_optimizer(net, lr, backbone_lr, wd, momentum, freeze_backbone):
     feature_params = map(id, net.feature.parameters())
     detection_params = filter(lambda p : id(p) not in feature_params, net.parameters())
-    params = [
+    if freeze_backbone:
+        params = [
+                    {"params": detection_params, "lr": lr},
+                ]
+
+        for p in net.feature.parameters():
+            p.requires_grad = False
+    else:
+        params = [
                 {"params": detection_params, "lr": lr},
                 {"params": net.feature.parameters(), "lr": backbone_lr}
             ]
-    
+
     optimizer = torch.optim.SGD(params, lr, weight_decay=wd, momentum=momentum)
     return optimizer
 
