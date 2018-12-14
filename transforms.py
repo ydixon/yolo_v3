@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from boundingbox import bbox_x1y1x2y2_to_cxcywh, bbox_cxcywh_to_x1y1x2y2, BoundingBoxConverter, CoordinateType, FormatType
-from utils import get_image_shape
+from utils import get_image_shape, build_2D_mask, fill_label_np_tensor
 
 
 class Compose():
@@ -28,24 +28,16 @@ class ToTensor():
         img, org_img, label = sample.get('img', None), sample.get('org_img', None), sample.get('label', None)
         lb_reverter = sample.get('lb_reverter', None)
 
-
         img = torch.from_numpy(img).float().permute(2,0,1) / 255.0 if img is not None else None
         org_img = torch.from_numpy(org_img).float().permute(2,0,1) / 255.0 if org_img is not None else None
         label = torch.from_numpy(fill_label_np_tensor(label, self.max_labels, self.max_label_cols)).float()
         lb_reverter = torch.from_numpy(lb_reverter).float() if lb_reverter is not None else None
-        
+
         update = {'img': img, 'org_img': org_img, 'label': label, 'lb_reverter': lb_reverter}
         sample.update({k:v for k,v in update.items() if v is not None})
         sample.pop('transform', None)
         sample.pop('bbs', None)
         return sample
-
-def fill_label_np_tensor(label, row, col):
-    label_tmp = np.full((row, col), 0.0)
-    if label is not None:
-        length = label.shape[0] if label.shape[0] < row else row
-        label_tmp[:length] = label[:length]
-    return label_tmp
 
 class ToNp():
     def __init__(self, bbs_idx=[1,2,3,4]):
@@ -192,14 +184,19 @@ def letterbox_reverter(labels, org_img, padded_dim, x_pad, y_pad, bbs_idx=np.arr
     else:
         raise TypeError("Labels must be a numpy array or pytorch tensor")
 
-    mask = labels.sum(-1) != 0
-    labels = labels[mask]
+    #print(labels.shape)
+    if len(labels) == 0:
+        return labels
+
+    sel_rows = (labels.sum(1) != 0).nonzero().squeeze()
+    x_idx, y_idx = bbs_idx[[0,2]], bbs_idx[[1,3]] 
+    x_mask = build_2D_mask(labels, sel_rows, x_idx)
+    y_mask = build_2D_mask(labels, sel_rows, y_idx)
 
     org_dim = get_image_shape(org_img)
     ratio_x, ratio_y = org_dim[1] / padded_dim[1], org_dim[0] / padded_dim[0]
-    x_idx, y_idx = bbs_idx[[0,2]], bbs_idx[[1,3]] 
-    labels[..., x_idx] = (labels[..., x_idx] - x_pad) * ratio_x
-    labels[..., y_idx] = (labels[..., y_idx] - y_pad) * ratio_y
+    labels[x_mask] = (labels[x_mask] - x_pad) * ratio_x
+    labels[y_mask] = (labels[y_mask] - y_pad) * ratio_y
 
     return labels
 
@@ -210,7 +207,7 @@ def iaa_run_seq(seq, img, bbs=None):
     aug_img = seq.augment_images([img])[0]
     if bbs:
         aug_bbs = seq.augment_bounding_boxes([bbs])[0]
-        aug_bbs = bbs_remove_cut_out(aug_bbs, 0.2)
+        aug_bbs = bbs_remove_cut_out(aug_bbs, 0.1)
     return aug_img, aug_bbs
 
 """

@@ -4,10 +4,12 @@ import PIL
 from PIL import ImageDraw, ImageFont
 from matplotlib import patches, patheffects
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import ImageGrid
 import matplotlib.ticker as plticker
 import torch
 import numpy as np
+import itertools
 
 
 # PLT functions
@@ -42,16 +44,54 @@ def show_img(im, figsize=None, ax=None):
     ax.get_yaxis().set_visible(False)
     return ax
 
-def show_img_grid(img_list, cols=2):
-    rows = len(img_list) // cols
-    fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(20, 100))
-    axes = [ax for row in axes for ax in row]
+def draw_axis(ax, isDraw=False):
+    ax.get_xaxis().set_visible(isDraw)
+    ax.get_yaxis().set_visible(isDraw)
+
+def draw_image(ax, img):
+    ax.imshow(img, shape=(2,2), aspect='equal')
+
+def draw_labels(ax, labels, classes, coord_idx=[1,2,3,4], class_idx=0):
+    for l in labels:
+        if l.sum() == 0:
+            continue
+        rect = l[coord_idx]
+        c = classes[l[class_idx].astype(np.int32)]
+        draw_rect(ax, rect)
+        draw_text(ax, rect[:2], c)
+        
+
+# Display a list of images with labels in given grid size         
+def show_img_grid(img_list, classes=None,
+                  labels_list=None, coord_idx=[1,2,3,4], class_idx=0,
+                  cols=2, figsize=None, col_title_dict=None):
+    rows = int(np.ceil(len(img_list) / cols))
+
+    heights = [a.shape[0] for a in img_list[::cols]]
+    widths = [a.shape[1] for a in img_list[0:cols]]
+
+    fig_width = 25  # inches
+    fig_height = fig_width * sum(heights) / sum(widths)
+    fig_size = (fig_width, fig_height)
+
+    fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=fig_size, gridspec_kw={'height_ratios':heights})
+    axes = [ax for ax in axes.ravel()]
+
+    if col_title_dict is not None:
+        assert(cols == len(col_title_dict['title']))
+        for ax, col in zip(axes[:cols], col_title_dict['title']):
+            ax.set_title(col, pad=col_title_dict['pad'], 
+                         fontdict={'fontsize': col_title_dict['fontsize'],
+                                   'fontweight' : col_title_dict['fontweight'] })
     
-    for ax, img in zip(axes, img_list):
-        ax.imshow(img, shape=(2,2), aspect='equal')
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-   
+    for ax, img, labels in itertools.zip_longest(axes, img_list, labels_list, fillvalue=None):
+        if img is not None:
+            draw_image(ax, img)
+        if labels is not None:
+            draw_labels(ax, labels, classes, coord_idx=coord_idx, class_idx=class_idx)
+        draw_axis(ax, False)
+        
+    plt.subplots_adjust(wspace=0.01, hspace=0.02, left=0, right=1, bottom=0, top=1)
     plt.tight_layout()
 
 # Combine images to one image

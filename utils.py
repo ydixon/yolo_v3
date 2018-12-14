@@ -186,7 +186,7 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4):
     for b in range(num_batches):
         batch_results = torch.Tensor().cuda()
         img_det = detections[b]
-        
+        	
         
         max_class_score, max_class_idx= torch.max(img_det[:,5:5 + num_classes], 1)
         img_det = torch.cat((img_det[:,:5],
@@ -200,7 +200,7 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4):
         img_det = img_det[nonzero_idx,:].view(-1,7)
                
         if img_det.shape[0] == 0:
-            results.append(batch_results)
+            results.append(batch_results.cpu())
         else:
             #Get the classes
             img_classes = torch_unique(img_det[:,-1])
@@ -218,7 +218,7 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4):
                 class_img_det = nms(class_img_det, iou, nms_thr)
                 batch_results = torch.cat((batch_results, class_img_det), 0)
 
-            results.append(batch_results)
+            results.append(batch_results.cpu())
     
     return results
 
@@ -227,3 +227,30 @@ def get_image_shape(img):
         return img
     else:
         return img.shape[1], img.shape[0]
+
+
+def fill_label_np_tensor(label, row, col):
+    label_tmp = np.full((row, col), 0.0)
+    if label is not None and len(label) != 0 :
+        length = label.shape[0] if label.shape[0] < row else row
+        label_tmp[:length] = label[:length]
+    return label_tmp
+
+
+# Mask rows and columns given the source tensor
+def build_2D_mask(src, rows_idx, cols_idx):
+    nH, nW = src.shape[0], src.shape[1]
+    rows_mask = torch.zeros_like(src).byte()
+    rows_mask[rows_idx] = 1
+    cols_mask = torch.zeros_like(src).byte()
+    cols_mask[..., cols_idx] = 1
+    mask = rows_mask * cols_mask
+    return mask.byte()
+
+
+# Exponential weighted moving average
+
+def ewma_online(new_value, previous_average, window):
+    alpha = 2 /(window + 1.0)
+    new_average = alpha * new_value + (1 - alpha) * previous_average
+    return new_average
