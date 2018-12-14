@@ -195,12 +195,13 @@ class YoloNet(nn.Module):
         
         
     def forward(self, x, target=None):
+        img_dim = (x.shape[3], x.shape[2])
         #Extract features
         out = self.feature(x)
                 
         #Detection layer 1
         out = self.pre_det1(out)
-        det1 = self.yolo1(out, target)
+        det1 = self.yolo1(out, img_dim, target)
         
         #Upsample 1
         r_head1 = self.pre_det1.getCachedOut(-3)
@@ -209,7 +210,7 @@ class YoloNet(nn.Module):
                 
         #Detection layer 2
         out = self.pre_det2(out)
-        det2 = self.yolo2(out, target)
+        det2 = self.yolo2(out, img_dim, target)
         
         #Upsample 2
         r_head2 = self.pre_det2.getCachedOut(-3)
@@ -218,12 +219,12 @@ class YoloNet(nn.Module):
                 
         #Detection layer 3
         out = self.pre_det3(out)
-        det3 = self.yolo3(out, target)
+        det3 = self.yolo3(out, img_dim, target)
         
         if target is not None:
             loss, *out = [sum(det) for det in zip(det1, det2, det3)]
             self.stats = dict(zip(self.stat_keys, out))
-            self.stats['recall'] = self.stats['nCorrect'] / self.stats['nGT'] if self.stats['nGT'] else 1
+            self.stats['recall'] = self.stats['nCorrect'] / self.stats['nGT'] if self.stats['nGT'] else 0
             return loss
         else:
             return det1, det2, det3

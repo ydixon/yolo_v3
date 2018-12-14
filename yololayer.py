@@ -25,15 +25,13 @@ class YoloLayer(nn.Module):
         self.mseloss = nn.MSELoss(size_average=False)
         self.bceloss = nn.BCELoss(size_average=False)
         self.bceloss_average = nn.BCELoss(size_average=True)
-        
-        self.training = False
  
-    def forward(self, x, target=None):
+    def forward(self, x, img_dim, target=None):
         #x : bs x nA*(5 + num_classes) * h * w
         nB = x.shape[0]
         nA = len(self.anchors)
         nH, nW = x.shape[2], x.shape[3]
-        stride = self.img_dim[0] / nH
+        stride = img_dim[1] / nH
         anchors = torch.FloatTensor(self.anchors) / stride
         
         #Reshape predictions from [B x [A * (5 + numClass)] x H x W] to [B x A x H x W x (5 + numClass)]
@@ -46,23 +44,25 @@ class YoloLayer(nn.Module):
         preds_cls = preds[..., 5:].sigmoid()
         
         # Calculate cx, cy, anchor mesh
-        mesh_x = torch.arange(nW).repeat(nW,1).unsqueeze(2)
-        mesh_y = torch.arange(nH).repeat(nH,1).t().unsqueeze(2)
+        mesh_x = torch.arange(nW).repeat(nH,1).unsqueeze(2)
+        mesh_y = torch.arange(nH).repeat(nW,1).t().unsqueeze(2)
         mesh_xy = torch.cat((mesh_x,mesh_y), 2)
         mesh_anchors = anchors.view(1, nA, 1, 1, 2).repeat(1, 1, nH, nW, 1)
         
         # pred_boxes holds bx,by,bw,bh
         pred_boxes = torch.FloatTensor(preds[..., :4].shape)
-        pred_boxes[..., :2] = preds_xy.sigmoid().cpu().detach() + mesh_xy # sig(tx) + cx
-        pred_boxes[..., 2:4] = preds_wh.cpu().detach().exp() * mesh_anchors  # exp(tw) * anchor
+        pred_boxes[..., :2] = preds_xy.detach().cpu().sigmoid() + mesh_xy # sig(tx) + cx
+        pred_boxes[..., 2:4] = preds_wh.detach().cpu().exp() * mesh_anchors  # exp(tw) * anchor
         
         if target is not None:
             obj_mask, noobj_mask, tconf, tcls, tx, ty, tw, th, nCorrect, nGT = self.build_target_tensor(
-                                                                    pred_boxes, target.cpu(), anchors, (nH, nW), self.numClass,
+                                                                    pred_boxes, target.detach().cpu(),
+                                                                    anchors, (nH, nW), self.numClass,
                                                                     self.ignore_thres)
             
-            recall = float(nCorrect / nGT) if nGT else 1
-            
+            #recall = float(nCorrect / nGT) if nGT else 1
+            #assert(nGT == TP + FN)
+
             # masks for loss calculations
             obj_mask, noobj_mask = obj_mask.cuda(), noobj_mask.cuda()
             cls_mask = (obj_mask == 1)
@@ -94,7 +94,7 @@ class YoloLayer(nn.Module):
         out = out.permute(0, 2, 3, 1, 4).contiguous().view(nB, nA*nH*nW, self.bbox_attrib)
         return out
 
-    def build_target_tensor(self, preds, target, anchors, inp_dim, numClass, ignore_thres):
+    def build_target_tensor(self, pred_boxes, target, anchors, inp_dim, numClass, ignore_thres):
         nB = target.shape[0]
         nA = len(anchors)
         nH, nW = inp_dim[0], inp_dim[1]
@@ -124,13 +124,14 @@ class YoloLayer(nn.Module):
                 gi = int(gx)
                 gj = int(gy)
 
-                # preds - [A x W x H x 4]  
+                # pred_boxes - [A x H x W x 4]  
                 # Do not train for objectness(noobj) if anchor iou > threshold.
                 tmp_gt_boxes = torch.FloatTensor([gx, gy, gw, gh]).unsqueeze(0)
-                tmp_pred_boxes = preds[b].view(-1, 4)
+                tmp_pred_boxes = pred_boxes[b].view(-1, 4)
                 tmp_ious, _ = torch.max(bbox_iou(tmp_pred_boxes, tmp_gt_boxes, mode="cxcywh"), 1)
                 ignore_idx = (tmp_ious > ignore_thres).view(nA, nH, nW)
                 noobj_mask[b][ignore_idx] = 0
+
                 
                 #find best fit anchor for each ground truth box
                 tmp_gt_boxes = torch.FloatTensor([[0, 0, gw, gh]])
@@ -140,13 +141,14 @@ class YoloLayer(nn.Module):
                 
                 #find iou for best fit anchor prediction box against the ground truth box
                 tmp_gt_box = torch.FloatTensor([gx, gy, gw, gh]).unsqueeze(0)
-                tmp_pred_box = preds[b, best_anchor, gj, gi].view(-1, 4)
+                tmp_pred_box = pred_boxes[b, best_anchor, gj, gi].view(-1, 4)
                 tmp_iou = bbox_iou(tmp_gt_box, tmp_pred_box, mode="cxcywh")
-                
+
                 if tmp_iou > 0.5:
                     nCorrect += 1
 
                 obj_mask[b, best_anchor, gj, gi] = 1
+                #noobj_mask[b, best_anchor, gj, gi] = 0
                 tconf[b, best_anchor, gj, gi] = 1
                 tcls[b, best_anchor, gj, gi, int(target[b, t, 0])] = 1
                 sig_x = gx - gi
