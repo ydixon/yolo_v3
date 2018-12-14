@@ -188,7 +188,10 @@ def letterbox_reverter(labels, org_img, padded_dim, x_pad, y_pad, bbs_idx=np.arr
     if len(labels) == 0:
         return labels
 
-    sel_rows = (labels.sum(1) != 0).nonzero().squeeze()
+    sel_rows = (labels.sum(1) != 0).nonzero().squeeze().view(-1)
+    if len(sel_rows) == 0:
+        return labels
+
     x_idx, y_idx = bbs_idx[[0,2]], bbs_idx[[1,3]] 
     x_mask = build_2D_mask(labels, sel_rows, x_idx)
     y_mask = build_2D_mask(labels, sel_rows, y_idx)
