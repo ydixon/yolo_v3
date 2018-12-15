@@ -1,5 +1,6 @@
 
 
+
 # YoloV3 in Pytorch and Jupyter Notebook
 <p align="center">
   <img width="630" height="350" src="x_wing.gif">
@@ -50,6 +51,13 @@ Horizontal Flip | 50% chance | N/A
 H**S**V Saturation | Multiply `1/sat` ~ `sat` | `saturation`
 HS**V** Exposure | Multiply `1/exposure` ~ `exposure` |`exposure`
 
+### Deterministic_data_loading.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/Deterministic_data_loading.ipynb)
+Pytorch's `Dataset` and `DataLoader` class are easy and convenient to use. It does a really good job abstracting the multiprocessing behind the scenes. However, the design also poses certain limitations when users try to add more functionalities. This notebook aims to address some of these concerns:
+1. Resume-able between batches
+2. Deterministic - results reproducible whether is has been paused/resume/one go.
+3. Reduced time for first batch - by default the `Dataloader` would need to iterate up to all the batches that came before the 'To-be-resumed batch' and that could take hours for long dataset .
+4. Cyclic - pick up left over samples that were not sufficient enough to form a batch and combine them with samples from the next epoch.
+
 ### COCODataset.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/COCODataset.ipynb)
 Shows how to parse the COCO dataset that follows the format that was used in the original darknet implementation .
 <pre>
@@ -70,15 +78,17 @@ Building up on previous notebooks, this notebook implements the back-propagation
 Minimal version of **yolo_train.ipynb**. You can use this notebook if you are only interested in testing with different datasets/augmentations/loss functions.
 ### CVATDataset.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/CVATDataset.ipynb)
 After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebook will parse the CVAT label format(xml) and convert it to readable format by the network. We will also start using openCV to draw and save image because **openCV** deals with pixels instead of DPI compared to **PLT** library which is more convenient. 
-### custom_data_train.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/custom_data_train.ipynb)
+### cvat_data_train.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/cvat_data_train.ipynb)
 Data is obtained by extracting images from a clip in **Star Wars: Rogue One** with ffmpeg. There are around 300 images and they are annotated by using CVAT. The notebook will simply overfit the model with custom data while using the darknet53 as feature extraction.  
 **P.S I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
-## TODO
+## Progress
 **2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**  
 **2018/9/11: Adapt data augmentations**  
 **2018/9/30: New loss function. Adapt darknet cfg augmentations parameters**  
 **2018/11/04: Accumlated gradients. Support use of `subdivisions` for GPU with less memory**  
- 
+**2018/12/15: Multi-scale training. New `DataHelper` class for batch scheduling. `custom_data_train.ipynb` replaced by `cvat_data_train.ipynb`. Deterministic data loading with Pytorch's dataset/dataloader. Training now resume-able between batches instead of epochs while maintaining deterministic behavior.**  
+
+TODO:
  1. Multi-scale training
  2. mAP (mean average precision)
  3. Data augmentation (random crop, rotate)
