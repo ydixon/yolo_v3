@@ -84,6 +84,9 @@ def show_img_grid(img_list, classes=None,
                          fontdict={'fontsize': col_title_dict['fontsize'],
                                    'fontweight' : col_title_dict['fontweight'] })
     
+    if labels_list is None:
+        labels_list = []
+
     for ax, img, labels in itertools.zip_longest(axes, img_list, labels_list, fillvalue=None):
         if img is not None:
             draw_image(ax, img)
