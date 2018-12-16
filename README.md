@@ -54,9 +54,11 @@ HS**V** Exposure | Multiply `1/exposure` ~ `exposure` |`exposure`
 ### Deterministic_data_loading.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/Deterministic_data_loading.ipynb)
 Pytorch's `Dataset` and `DataLoader` class are easy and convenient to use. It does a really good job in abstracting the multiprocessing behind the scenes. However, the design also poses certain limitations when users try to add more functionalities. This notebook aims to address some of these concerns:
 1. Resume-able between batches
-2. Deterministic - results reproducible whether is has been paused/resume/one go.
+2. Deterministic - results reproducible whether it has been paused/resume/one go.
 3. Reduced time for first batch - by default the `Dataloader` would need to iterate up to all the batches that came before the 'To-be-resumed batch' and that could take hours for long datasets.
-4. Cyclic - pick up left over samples that were not sufficient enough to form a batch and combine them with samples from the next epoch.
+4. Cyclic - pick up left over samples that were not sufficient enough to form a batch and combine them with samples from the next epoch.  
+
+The goals are acheived by creating a controller/wrapper class around `Dataset` and `DataLoader`. This wrapper class is named as `DataHelper`. It act as an batch iterator and also stores information regarding the running iteration.
 
 ### COCODataset.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/COCODataset.ipynb)
 Shows how to parse the COCO dataset that follows the format that was used in the original darknet implementation .
