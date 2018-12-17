@@ -3,7 +3,7 @@
 
 # YoloV3 in Pytorch and Jupyter Notebook
 <p align="center">
-  <img width="630" height="350" src="x_wing.gif">
+  <img width="630" height="350" src="doc/x_wing.gif">
 </p>
 
 This repository aims to create a YoloV3 detector in **Pytorch** and **Jupyter Notebook**. I'm trying to take a more "oop" approach compared to other existing implementations which constructs the architecture iteratively by reading the config file at [Pjreddie's repo](https://github.com/pjreddie/darknet/blob/master/cfg/yolov3.cfg). The notebook is intended for study and practice purpose, many ideas and code snippets are taken from various papers and blogs. I will try to comment as much as possible. You should be able to just *Shift-Enter* to the end of the notebook and see the results.
@@ -52,11 +52,13 @@ H**S**V Saturation | Multiply `1/sat` ~ `sat` | `saturation`
 HS**V** Exposure | Multiply `1/exposure` ~ `exposure` |`exposure`
 
 ### Deterministic_data_loading.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/Deterministic_data_loading.ipynb)
-Pytorch's `Dataset` and `DataLoader` class are easy and convenient to use. It does a really good job abstracting the multiprocessing behind the scenes. However, the design also poses certain limitations when users try to add more functionalities. This notebook aims to address some of these concerns:
+Pytorch's `Dataset` and `DataLoader` class are easy and convenient to use. It does a really good job in abstracting the multiprocessing behind the scenes. However, the design also poses certain limitations when users try to add more functionalities. This notebook aims to address some of these concerns:
 1. Resume-able between batches
-2. Deterministic - results reproducible whether is has been paused/resume/one go.
-3. Reduced time for first batch - by default the `Dataloader` would need to iterate up to all the batches that came before the 'To-be-resumed batch' and that could take hours for long dataset .
-4. Cyclic - pick up left over samples that were not sufficient enough to form a batch and combine them with samples from the next epoch.
+2. Deterministic - results reproducible whether it has been paused/resume/one go.
+3. Reduced time for first batch - by default the `Dataloader` would need to iterate up to all the batches that came before the 'To-be-resumed batch' and that could take hours for long datasets.
+4. Cyclic - pick up left over samples that were not sufficient enough to form a batch and combine them with samples from the next epoch.  
+
+The goals are acheived by creating a controller/wrapper class around `Dataset` and `DataLoader`. This wrapper class is named as `DataHelper`. It act as an batch iterator and also stores information regarding the running iteration.
 
 ### COCODataset.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/COCODataset.ipynb)
 Shows how to parse the COCO dataset that follows the format that was used in the original darknet implementation .
@@ -65,6 +67,10 @@ Shows how to parse the COCO dataset that follows the format that was used in the
 &#8226; Convert labels and image to Tensors	&#8226; Box coordinates transforms
 &#8226; Build Pytorch dataset			&#8226; Draw
 </pre>
+<p align="left">
+  <img width="1600" height="343" src="https://user-images.githubusercontent.com/22487836/50041901-dd55e880-0096-11e9-9c2e-ae9a354df9f2.png">
+</p>
+
 ### yolo_train.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/yolo_train.ipynb)
 Building up on previous notebooks, this notebook implements the back-propagation and training process of the network. The most important part is figuring out how to convert labels to target masks and tensors that could be trained against. This notebook also modifies `YoloNet` a little bit to accommodate the changes.
 <pre>
@@ -76,8 +82,16 @@ Building up on previous notebooks, this notebook implements the back-propagation
 **Updated to use mseloss for tx, ty. This should improve training performance.**
 ### yolo_train_short.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/yolo_train_short.ipynb)
 Minimal version of **yolo_train.ipynb**. You can use this notebook if you are only interested in testing with different datasets/augmentations/loss functions.
+<p align="center">
+  <img width="1600" height="643" src="doc/train_compare.png">
+</p>
+
 ### CVATDataset.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/CVATDataset.ipynb)
 After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebook will parse the CVAT label format(xml) and convert it to readable format by the network. We will also start using openCV to draw and save image because **openCV** deals with pixels instead of DPI compared to **PLT** library which is more convenient. 
+<p align="center">
+  <img width="1600" height="343" src="https://user-images.githubusercontent.com/22487836/50041971-0460ea00-0098-11e9-9244-00a305fc3516.png">
+</p>
+
 ### cvat_data_train.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/cvat_data_train.ipynb)
 Data is obtained by extracting images from a clip in **Star Wars: Rogue One** with ffmpeg. There are around 300 images and they are annotated by using CVAT. The notebook will simply overfit the model with custom data while using the darknet53 as feature extraction.  
 **P.S I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
