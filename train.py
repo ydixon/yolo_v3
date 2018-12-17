@@ -99,8 +99,7 @@ def train_impl(data, net, optimizer, recorder, scheduler,
     if pbar is not None:
         pbar.close()
 
-    print("\n[Finish] Net Batch:{}, current_batch:{}".format(net_batch, batch)) 
-
+    print("\n[Finish] Net Batch:{}, current_batch:{}".format(data.get_net_batch(), data.get_batch()))
 
 def load_optimizer(optimizer, state_dict):
     if len(optimizer.param_groups) == len(state_dict['param_groups']):
