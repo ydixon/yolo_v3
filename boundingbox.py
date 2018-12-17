@@ -69,8 +69,9 @@ class BoundingBoxConverter():
                 labels = labels.copy()
             else:
                 raise TypeError("Labels must be a numpy array or pytorch tensor")
-            	#print(type(labels))
-                
+
+        if len(labels) == 0:
+            return labels
 
         box = labels[..., bbox_idx]
         box = BoundingBoxConverter.bbox_format_converter[src_format_type][dest_format_type](box)
