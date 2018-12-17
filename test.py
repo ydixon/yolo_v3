@@ -18,14 +18,10 @@ from draw import *
 import transforms
 
 # Move to utils / transfroms / boundingbox
-def letterbox_reverse_exp(labels, params, bbs_idx=np.array([0,1,2,3])):
-    #print('labels:{}'.format(labels.shape))
-    for i, (l, p) in enumerate(zip(labels, params)):
-        org_img, padded_dim = tuple(p[0:2]), tuple(p[2:4])
-        x_pad, y_pad = p[4], p[5]
-        new_l = transforms.letterbox_reverter(l, org_img, padded_dim, x_pad, y_pad, bbs_idx)
-        #print(new_l.shape)
-        labels[i] =  new_l
+def letterbox_reverse_on_batches(labels, params, bbs_idx=np.array([0,1,2,3])):
+    nb_images = len(labels)
+    for i in range(nb_images):
+        labels[i] = transforms.letterbox_reverse(labels[i], *params[i])
     return labels
 
 def prep_labels_for_plt(labels_list, dim, lb_params_list, reverse_letterbox):
@@ -34,7 +30,7 @@ def prep_labels_for_plt(labels_list, dim, lb_params_list, reverse_letterbox):
                                        CoordinateType.Relative, FormatType.cxcywh,
                                        CoordinateType.Absolute, FormatType.x1y1x2y2,
                                        np.array([1,2,3,4]), dim)
-        labels_list = letterbox_reverse_exp(labels_list, lb_params_list, np.array([1,2,3,4]))
+        labels_list[..., 1:5] = letterbox_reverse_on_batches(labels_list[..., 1:5], lb_params_list, np.array([1,2,3,4]))
 
         labels_list = BoundingBoxConverter.convert(labels_list.numpy(),
                                                    CoordinateType.Absolute, FormatType.x1y1x2y2,
@@ -56,14 +52,14 @@ def prep_img_for_plt(img_list):
     return img_list
       
 def prep_predictions_for_plt(preds_list, dim, lb_params, reverse_letterbox):
-    preds_list = Tensor([fill_label_np_tensor(p.numpy(), 50, 7) for p in preds_list])
+    preds_list = np.array([fill_label_np_tensor(p.numpy(), 50, 7) for p in preds_list])
     if reverse_letterbox:
-        preds_list = letterbox_reverse_exp(preds_list, lb_params)
+        preds_list = letterbox_reverse_on_batches(preds_list, lb_params)
     preds_list = preds_list[..., [6, 0, 1, 2, 3,]]
     preds_list = BoundingBoxConverter.convert(preds_list, CoordinateType.Absolute, FormatType.x1y1x2y2,
                                                       CoordinateType.Absolute, FormatType.xywh,
                                                       np.array([1,2,3,4]), dim)
-    preds_list = preds_list.numpy()
+    preds_list = preds_list
     return preds_list
 
 def prep_img_for_opencv(img_list):
@@ -75,14 +71,15 @@ def prep_img_for_opencv(img_list):
 def predict(data, net, num_classes=80, reverse_letterbox=True):
     img_list = []
     preds_list = []
-    lb_params_list = torch.FloatTensor()
+    lb_params_list = []
     with torch.no_grad(): 
         for sample in data:
-            imgs, org_imgs = sample['img'].cuda(), sample['org_img']
-            labels, lb_params = sample['label'], sample['lb_reverter']
+            imgs, org_imgs, labels = sample['img'].cuda(), sample['org_img'], sample['label']
+            lb_params = [[o.shape[2], o.shape[1], i.shape[2], i.shape[1]]
+                        for i, o in zip(imgs, org_imgs)]
             dim = (imgs.shape[3], imgs.shape[2])
 
-            lb_params_list = torch.cat((lb_params_list, lb_params), 0)
+            lb_params_list += lb_params
             # Copy original image instead of the letterboxed image
             if reverse_letterbox:                      
                 img_list += [img.cpu() for img in org_imgs]
@@ -109,15 +106,16 @@ def predict_multiple(data, nets, num_classes=80, reverse_letterbox=True):
     img_list = []
     preds_list = [[] for i in range(len(nets))]
     labels_list = torch.FloatTensor()
-    lb_params_list = torch.FloatTensor()
+    lb_params_list = []
     with torch.no_grad(): 
         for sample in data:
-            imgs, org_imgs = sample['img'].cuda(), sample['org_img']
-            labels, lb_params = sample['label'], sample['lb_reverter']
+            imgs, org_imgs, labels = sample['img'].cuda(), sample['org_img'], sample['label']
+            lb_params = [[o.shape[2], o.shape[1], i.shape[2], i.shape[1]]
+                        for i, o in zip(imgs, org_imgs)]
             dim = (imgs.shape[3], imgs.shape[2])
 
             labels_list = torch.cat((labels_list, labels), 0)
-            lb_params_list = torch.cat((lb_params_list, lb_params), 0)
+            lb_params_list += lb_params
             if reverse_letterbox:                      
                 img_list += [img.cpu() for img in org_imgs]
             else:

@@ -2,6 +2,9 @@ import copy
 import cv2
 import imgaug as ia
 from imgaug import augmenters as iaa
+from imgaug.augmenters import Augmenter
+import six.moves as sm
+
 import numpy as np
 import torch
 
@@ -39,67 +42,37 @@ class ToTensor():
         sample.pop('bbs', None)
         return sample
 
-class ToNp():
-    def __init__(self, bbs_idx=[1,2,3,4]):
+class IaaAugmentations():
+    def __init__(self, aug_list, bbs_idx=[1,2,3,4]):
+        self.seq = iaa.Sequential(aug_list)
         self.bbs_idx = bbs_idx
-
-    def __call__(self, sample):
-        img, label, bbs = sample['img'], sample['label'], sample['bbs']
-        if label is not None:
-            label = label_bbs_to_np(bbs, bbs_idx=self.bbs_idx)
-        sample.update({'img': img.copy(), 'label': label, 'bbs':bbs})
-        return sample
-
-class ToIaa():
-    def __init__(self, bbs_idx=[1,2,3,4], seed=None):
-        if seed is None:
-            seed = np.random.randint(0, 2**16)
-
-        self.bbs_idx = bbs_idx
-        self.seed = seed
-        
-        ia.seed(self.seed)
 
     def __call__(self, sample):
         img, label = sample['img'], sample['label']
+        img_dim = img.shape[1], img.shape[0]
         bbs = None
+
         if label is not None:
+            label = BoundingBoxConverter.convert(label,
+                                             CoordinateType.Relative, FormatType.cxcywh,
+                                             CoordinateType.Absolute, FormatType.x1y1x2y2,
+                                             bbox_idx=self.bbs_idx, img_dim=img_dim)
+
             bbs = label_np_to_bbs(label, img.shape, bbs_idx=self.bbs_idx)
-        sample.update({'img': img, 'label': label, 'bbs':bbs})
-        return sample
 
-class IaaAugmentations():
-    def __init__(self, aug_list):
-        self.seq = iaa.Sequential(aug_list)
-
-
-    def __call__(self, sample):
-        img, label, bbs = sample['img'], sample['label'], sample['bbs']
         seq = self.seq.to_deterministic()
         img, bbs = iaa_run_seq(seq, img, bbs)
+
+        if label is not None:
+            label = label_bbs_to_np(bbs, bbs_idx=self.bbs_idx)
+            img_dim = img.shape[1], img.shape[0]
+            label = BoundingBoxConverter.convert(label,
+                                                 CoordinateType.Absolute, FormatType.x1y1x2y2,
+                                                 CoordinateType.Relative, FormatType.cxcywh,
+                                                 bbox_idx=self.bbs_idx, img_dim=img_dim)
+
         sample.update({'img': img, 'label': label, 'bbs':bbs})
         return sample
-
-def label_np_to_bbs(label, shape, bbs_idx=np.arange(0,4)):
-    # Filter bounding boxes that doesn't satisfy x2 > x1 and y2 > y1 
-    bbs = ((b[bbs_idx[0]], b[bbs_idx[1]], b[bbs_idx[2]], b[bbs_idx[3]], b) for b in label if b[bbs_idx[2]] > b[bbs_idx[0]] and b[bbs_idx[3]] > b[bbs_idx[1]])
-    bbs = [ia.BoundingBox(x1=b[0], y1=b[1], x2=b[2], y2=b[3], label=b[4]) for b in bbs]
-    bbs = ia.BoundingBoxesOnImage(bbs, shape=shape)
-    return bbs
-
-def label_bbs_to_np(bbs, bbs_idx=np.arange(0,4)):
-    if len(bbs.bounding_boxes) == 0:
-        return None
-
-    row = len(bbs.bounding_boxes)
-    col = bbs.bounding_boxes[0].label.shape[0]
-    label = np.zeros((row, col))
-    for i, b in enumerate(bbs.bounding_boxes):
-        label_row = b.label
-        label_row[..., bbs_idx] = [b.x1, b.y1, b.x2, b.y2]
-        label[i] = label_row
-    return label
-
 
 """
     Follow darknet format:darknet/src/http_stream.cpp
@@ -154,29 +127,80 @@ def iaa_letterbox(img, new_dim):
            lb_reverter
            #[x_pad, y_pad, org_dim[0] / padded_w, org_dim[1] / padded_h]
 
-def letterbox_transforms(org_w, org_h, new_w, new_h):
-    ratio = min(new_w / org_w, new_h / org_h)
-    resize_w, resize_h = int(org_w * ratio), int(org_h * ratio)
-    x_off, y_off = (new_w - resize_w) // 2, (new_h - resize_h) // 2
-    return resize_w, resize_h, x_off, y_off, ratio
+class IaaLetterbox(Augmenter):
+    def __init__(self, dim, pad_val=128, interpolation="cubic", name=None, deterministic=False, random_state=None):
+        super().__init__(name=name, deterministic=deterministic, random_state=random_state)
+        
+        # dim = (width, height)
+        self.dim = dim
+        self.pad_cval = pad_val  
+        self.interpolation = interpolation
 
-class IaaLetterbox():
-    def __init__(self, new_dim):
-        super().__init__()
-        self.new_dim = new_dim
+    def _augment_images(self, images, random_state, parents, hooks):
+        result = []
+        nb_images = len(images)
+        height, width = self.dim[1], self.dim[0]
+        pad_cval = self.pad_cval
+        for i in sm.xrange(nb_images):
+            image = images[i]
+            # Calculate letterbox parameters
+            resize_w, resize_h, x_pad, y_pad = self._compute_height_width_pad(image.shape, height, width)
+            # Resize
+            image_rs = ia.imresize_single_image(image, (resize_h, resize_w), interpolation=self.interpolation)
+            # Add paddings
+            pad_left, pad_right = x_pad, width - resize_w - x_pad
+            pad_top, pad_bottom = y_pad, height - resize_h - y_pad
+            if image_rs.ndim == 2:
+                pad_vals = ((pad_top, pad_bottom), (pad_left, pad_right))
+            else:
+                pad_vals = ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0))
+            image_cr_pa = np.pad(image_rs, pad_vals, mode="constant", constant_values=pad_cval)   
+            result.append(image_cr_pa)
 
-    def __call__(self, sample):
-        org_img, label, bbs = sample['img'], sample['label'], sample['bbs']
-        seq, lb_reverter = iaa_letterbox(org_img, self.new_dim)
-        seq = seq.to_deterministic()
-        img, bbs = iaa_run_seq(seq, org_img, bbs)
-        sample.update({'img': img, 'org_img': org_img.copy(), 'label': label, 'bbs':bbs, 'lb_reverter':lb_reverter})
-        return sample
+        if not isinstance(images, list):
+            all_same_size = (len(set([image.shape for image in result])) == 1)
+            if all_same_size:
+                result = np.array(result, dtype=np.uint8)
+        return result
 
+    def _augment_keypoints(self, keypoints_on_images, random_state, parents, hooks):
+        result = []
+        nb_images = len(keypoints_on_images)
+        height, width = self.dim[1], self.dim[0]
+        for i in sm.xrange(nb_images):
+            keypoints_on_image = keypoints_on_images[i]
+            # Calculate letterbox parameters
+            resize_w, resize_h, x_pad, y_pad = self._compute_height_width_pad(keypoints_on_image.shape, height, width)
+            # Resize
+            new_shape = (resize_h, resize_w) + keypoints_on_image.shape[2:]
+            keypoints_on_image_rs = keypoints_on_image.on(new_shape)
+            # Add paddings
+            pad_left, pad_right = x_pad, width - resize_w - x_pad
+            pad_top, pad_bottom = y_pad, height - resize_h - y_pad
+            shifted = keypoints_on_image_rs.shift(x=x_pad, y=y_pad)
+            shifted.shape = (height + pad_left + pad_right,
+                             width + pad_top + pad_bottom) + shifted.shape[2:]
+            result.append(shifted)
+        return result
 
+    @classmethod
+    def _compute_height_width_pad(self, image_shape, new_h, new_w):
+        img_h, img_w = image_shape[0:2]
+        h, w = new_h, new_w
+        
+        ratio = min(new_w / img_w, new_h / img_h)
+        resize_w, resize_h = int(img_w * ratio), int(img_h * ratio)
+        x_pad, y_pad = (new_w - resize_w) // 2, (new_h - resize_h) // 2
+        
+        return resize_w, resize_h, x_pad, y_pad
+    
+    def get_parameters(self):
+        return [self.width, self.height, self.interpolation]
 
+def letterbox_reverse(labels, org_w, org_h, new_w, new_h):
+    if len(labels) == 0:
+        return labels
 
-def letterbox_reverter(labels, org_img, padded_dim, x_pad, y_pad, bbs_idx=np.array([1,2,3,4])):
     if isinstance(labels, torch.Tensor):
         labels = labels.clone()
     elif isinstance(labels, np.ndarray):
@@ -184,26 +208,17 @@ def letterbox_reverter(labels, org_img, padded_dim, x_pad, y_pad, bbs_idx=np.arr
     else:
         raise TypeError("Labels must be a numpy array or pytorch tensor")
 
-    #print(labels.shape)
-    if len(labels) == 0:
-        return labels
+    ratio = min(new_w / org_w, new_h / org_h)
+    resize_w, resize_h = int(org_w * ratio), int(org_h * ratio)
+    x_pad, y_pad = (new_w - resize_w) // 2, (new_h - resize_h) // 2
 
-    sel_rows = (labels.sum(1) != 0).nonzero().squeeze().view(-1)
-    if len(sel_rows) == 0:
-        return labels
-
-    x_idx, y_idx = bbs_idx[[0,2]], bbs_idx[[1,3]] 
-    x_mask = build_2D_mask(labels, sel_rows, x_idx)
-    y_mask = build_2D_mask(labels, sel_rows, y_idx)
-
-    org_dim = get_image_shape(org_img)
-    ratio_x, ratio_y = org_dim[1] / padded_dim[1], org_dim[0] / padded_dim[0]
-    labels[x_mask] = (labels[x_mask] - x_pad) * ratio_x
-    labels[y_mask] = (labels[y_mask] - y_pad) * ratio_y
+    mask = labels.sum(-1) != 0
+    labels[mask, 0] = (labels[mask, 0] - x_pad) / ratio
+    labels[mask, 2] = (labels[mask, 2] - x_pad) / ratio
+    labels[mask, 1] = (labels[mask, 1] - y_pad) / ratio
+    labels[mask, 3] = (labels[mask, 3] - y_pad) / ratio
 
     return labels
-
-
 
 def iaa_run_seq(seq, img, bbs=None):
     aug_bbs = None
@@ -252,55 +267,31 @@ def bbs_clip(bbs, shape, area_thr):
     else:
         return None
 
-"""
-    Wrap BoundingBoxConverter function into a transform object
-"""
-class BoundingBoxFormatConvert(object):
-    def __init__(self, src_coord_type, src_format_type,
-                       dest_coord_type, dest_format_type,
-                       bbox_idx):
-        self.src_coord_type = src_coord_type
-        self.src_format_type = src_format_type
-        self.dest_coord_type = dest_coord_type
-        self.dest_format_type = dest_format_type
-        self.bbox_idx = bbox_idx
+def letterbox_transforms(org_w, org_h, new_w, new_h):
+    ratio = min(new_w / org_w, new_h / org_h)
+    resize_w, resize_h = int(org_w * ratio), int(org_h * ratio)
+    x_off, y_off = (new_w - resize_w) // 2, (new_h - resize_h) // 2
+    return resize_w, resize_h, x_off, y_off, ratio
 
-    def __call__(self, sample):
-        img, label = sample['img'], sample['label']
-        img_dim = img.shape[1], img.shape[0]
+def label_np_to_bbs(label, shape, bbs_idx=np.arange(0,4)):
+    # Filter bounding boxes that doesn't satisfy x2 > x1 and y2 > y1 
+    bbs = ((b[bbs_idx[0]], b[bbs_idx[1]], b[bbs_idx[2]], b[bbs_idx[3]], b) for b in label if b[bbs_idx[2]] > b[bbs_idx[0]] and b[bbs_idx[3]] > b[bbs_idx[1]])
+    bbs = [ia.BoundingBox(x1=b[0], y1=b[1], x2=b[2], y2=b[3], label=b[4]) for b in bbs]
+    bbs = ia.BoundingBoxesOnImage(bbs, shape=shape)
+    return bbs
 
-        if label is not None:
-            label = BoundingBoxConverter.convert(label,
-                                                 self.src_coord_type, self.src_format_type,
-                                                 self.dest_coord_type, self.dest_format_type,
-                                                 self.bbox_idx,
-                                                 img_dim
-                                                )
+def label_bbs_to_np(bbs, bbs_idx=np.arange(0,4)):
+    if len(bbs.bounding_boxes) == 0:
+        return np.array([])
 
-        sample.update({'img': img, 'label': label})
-        return sample
-
-    def reverse(self):
-        rev = copy.copy(self)
-        rev.src_coord_type = self.dest_coord_type
-        rev.src_format_type = self.dest_format_type
-        rev.dest_coord_type = self.src_coord_type
-        rev.dest_format_type = self.src_format_type
-        return rev
-
-class ToX1y1x2y2Abs(BoundingBoxFormatConvert):
-    def __init__(self, src_coord_type, src_format_type, bbox_idx):
-        super().__init__(src_coord_type, src_format_type,
-                         CoordinateType.Absolute,
-                         FormatType.x1y1x2y2,
-                         bbox_idx)
-
-class ToCxcywhRel(BoundingBoxFormatConvert):
-    def __init__(self, src_coord_type, src_format_type, bbox_idx):
-        super().__init__(src_coord_type, src_format_type,
-                         CoordinateType.Relative,
-                         FormatType.cxcywh,
-                         bbox_idx)
+    row = len(bbs.bounding_boxes)
+    col = bbs.bounding_boxes[0].label.shape[0]
+    label = np.zeros((row, col))
+    for i, b in enumerate(bbs.bounding_boxes):
+        label_row = b.label
+        label_row[..., bbs_idx] = [b.x1, b.y1, b.x2, b.y2]
+        label[i] = label_row
+    return label
 
 
 
@@ -349,80 +340,4 @@ class ExtraAugmentations():
 
 
 
-"""
-    Legacy versions. To be removed
-"""
-class Letterbox:
-    """Letterbox image and labels
-    Args:
-        new_dim: target dimension (weight, height)
-        box_coord_scale: Given (bx, bx, bw, bh) with image of (w, h)
-                         'pixel' -- labels value are interpreted as pixels (bx, bx, bw, bh)
-                         'ratio' -- labels value are interpreted as ratio (bx/w, bx/h, bw/w, bh/h)
-    """
-    def __init__(self, new_dim, box_coord_scale='ratio', bbs_idx=np.arange(0,4)):
-        self.new_dim = new_dim
-        self.box_coord_scale = box_coord_scale
-        self.bbs_idx = bbs_idx
-        
-    def __call__(self, sample):
-        org_img = sample['img']
-        org_w, org_h = org_img.shape[1], org_img.shape[0]
-        new_w, new_h = self.new_dim[1], self.new_dim[0]
-        resize_w, resize_h, x_off, y_off, ratio = letterbox_transforms(org_w, org_h, new_w, new_h)
-        resize_img = cv2.resize(org_img, (resize_w, resize_h), interpolation = cv2.INTER_CUBIC)
-        
-        #Put the box image on top of the blank image
-        img = np.full(self.new_dim +(3,), 128)
-        img[y_off:y_off+resize_h, x_off:x_off+resize_w] = resize_img
-        
-        labels = sample['label']
-        if sample['label'] is not None:
-            if self.box_coord_scale == 'pixel':
-                x_idx, y_idx = self.bbs_idx[[0,2]], self.bbs_idx[[1,3]] 
-                labels[..., x_idx] = labels[..., x_idx] / org_w
-                labels[..., y_idx] = labels[..., y_idx] / org_h
-
-        x_off, y_off = x_off / new_w, y_off / new_h
-
-        if labels is not None:
-            labels = letterbox_labels(labels, x_off, y_off, (resize_w, resize_h), (new_w, new_h), self.bbs_idx)
-
-        transform = np.array([x_off, y_off, resize_w, resize_h,new_w, new_h])
-        sample['img'], sample['label'], sample['transform'] = img, labels, transform
-        return sample
-   
-
-def letterbox_labels(labels, x_off, y_off, resize_dim, new_dim, bbs_idx=np.arange(0,4)):
-    if isinstance(labels, torch.Tensor): 
-        labels = labels.clone()
-    elif isinstance(labels, np.ndarray):
-        labels = labels.copy()
-    else:
-        raise TypeError("Labels must be a numpy array or pytorch tensor")
-    ratio_x = resize_dim[0] / new_dim[0]
-    ratio_y = resize_dim[1] / new_dim[1]
-    x_idx, y_idx, cxw_idx, cyh_idx = bbs_idx[0], bbs_idx[1], bbs_idx[[0,2]], bbs_idx[[1,3]]    
-    labels[..., cxw_idx] *= ratio_x 
-    labels[..., cyh_idx] *= ratio_y 
-    labels[..., x_idx] += x_off
-    labels[..., y_idx] += y_off
-
-    return labels
-
-def letterbox_label_reverse(labels, x_off, y_off, resize_dim, new_dim, bbs_idx=np.arange(0,4)):
-    if isinstance(labels, torch.Tensor):
-        labels = labels.clone()
-    elif isinstance(labels, np.ndarray):
-        labels = labels.copy()
-    else:
-        raise TypeError("Labels must be a numpy array or pytorch tensor")
-    ratio_x = resize_dim[0] / new_dim[0]
-    ratio_y = resize_dim[1] / new_dim[1]
-    x_idx, y_idx, cxw_idx, cyh_idx = bbs_idx[0], bbs_idx[1], bbs_idx[[0,2]], bbs_idx[[1,3]]  
-    labels[..., x_idx] -= x_off
-    labels[..., y_idx] -= y_off
-    labels[..., cxw_idx] = np.clip((labels[..., cxw_idx] ) / ratio_x, 0, 1) 
-    labels[..., cyh_idx] = np.clip((labels[..., cyh_idx] ) / ratio_y, 0, 1)
-    return labels
 
