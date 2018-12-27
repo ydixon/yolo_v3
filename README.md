@@ -103,7 +103,7 @@ Data is obtained by extracting images from a clip in **Star Wars: Rogue One** wi
 **2018/12/15: Multi-scale training. New `DataHelper` class for batch scheduling. `custom_data_train.ipynb` replaced by `cvat_data_train.ipynb`. Deterministic data loading with Pytorch's dataset/dataloader. Training now resume-able between batches instead of epochs while maintaining deterministic behavior.**  
 
 TODO:
- 1. Multi-scale training
+ 1. Integrate pycocotools for evaluation
  2. mAP (mean average precision)
  3. Data augmentation (random crop, rotate)
  4. Implement backhook for YoloNet branching
