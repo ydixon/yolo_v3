@@ -213,10 +213,10 @@ def letterbox_reverse(labels, org_w, org_h, new_w, new_h):
     x_pad, y_pad = (new_w - resize_w) // 2, (new_h - resize_h) // 2
 
     mask = labels.sum(-1) != 0
-    labels[mask, 0] = (labels[mask, 0] - x_pad) / ratio
-    labels[mask, 2] = (labels[mask, 2] - x_pad) / ratio
-    labels[mask, 1] = (labels[mask, 1] - y_pad) / ratio
-    labels[mask, 3] = (labels[mask, 3] - y_pad) / ratio
+    labels[mask, 0] = np.clip((labels[mask, 0] - x_pad) / ratio, 0, org_w)
+    labels[mask, 2] = np.clip((labels[mask, 2] - x_pad) / ratio, 0, org_w)
+    labels[mask, 1] = np.clip((labels[mask, 1] - y_pad) / ratio, 0, org_h)
+    labels[mask, 3] = np.clip((labels[mask, 3] - y_pad) / ratio, 0, org_h)
 
     return labels
 
