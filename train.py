@@ -54,7 +54,7 @@ def train_impl(data, net, optimizer, recorder, scheduler,
 
         inp, labels = sample['img'], sample['label']
         if use_gpu:
-            inp, labels = inp.cuda(), labels.cuda()
+            inp, labels = inp.cuda(), labels
         
         # Accumulate gradients for each mini-batch    
         loss = net(inp, labels)

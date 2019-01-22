@@ -88,7 +88,7 @@ def predict(data, net, num_classes=80, reverse_letterbox=True):
             
             # Pass images to the network
             det1, det2, det3 = net(imgs, None)
-            predictions = postprocessing(torch.cat((det1,det2,det3), 1), num_classes, obj_conf_thr=0.5, nms_thr=0.4)
+            predictions = postprocessing(torch.cat((det1,det2,det3), 1), num_classes, obj_conf_thr=0.5, nms_thr=0.4, is_eval=False, use_nms=True)
             preds_list += predictions
 
             #print('Batch:{} {}'.format(data.current_batch, str(sample['img'].shape)))
@@ -124,7 +124,7 @@ def predict_multiple(data, nets, num_classes=80, reverse_letterbox=True):
             # Pass images to the  multiple networks
             for i, net in enumerate(nets):
                 det1, det2, det3 = net(imgs, None)
-                predictions = postprocessing(torch.cat((det1,det2,det3), 1), num_classes, obj_conf_thr=0.5, nms_thr=0.4)
+                predictions = postprocessing(torch.cat((det1,det2,det3), 1), num_classes, obj_conf_thr=0.5, nms_thr=0.4, is_eval=False, use_nms=True)
                 preds_list[i] += predictions
             
         img_list = prep_img_for_plt(img_list)

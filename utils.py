@@ -1,3 +1,5 @@
+import re
+import os.path as osp
 import numpy as np
 import torch
 from torch import Tensor
@@ -5,6 +7,7 @@ from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 import cv2
 from enum import Enum
+from boundingbox import *
 
 def letterbox_label(label, transform, dim):
     label_x_offset = transform[..., 2] / dim[0]
@@ -117,8 +120,6 @@ def iou_vectorized(bbox):
 
 # mode - x1y1x2y2, cxcywh
 def bbox_iou(b1, b2, mode="x1y1x2y2"):
-    #num_box = bbox.shape[0]
-    
     if mode == "x1y1x2y2":
         b1_x1, b1_y1, b1_x2, b1_y2 = b1[...,0], b1[...,1], b1[...,2], b1[...,3]
         b2_x1, b2_y1, b2_x2, b2_y2 = b2[...,0], b2[...,1], b2[...,2], b2[...,3]  
@@ -144,83 +145,145 @@ def bbox_iou(b1, b2, mode="x1y1x2y2"):
     iou = inter_area / union_area
     return iou
 
-#Iterate through the bounding boxes and remove rows accordingly
-def reduce_row_by_column(inp):
-    i = 0
-    while i < inp.shape[0]:
-        remove_row_idx = inp[i][1].item()
-        if inp[i][0] != remove_row_idx and i < inp.shape[0]:
-            keep_mask = (inp[:,0] != remove_row_idx).nonzero().squeeze()
-            inp = inp[keep_mask]
-        i += 1
-    return inp
-
-#bbox is expected to be sorted by class score in descending order
-def nms(bbox, iou, nms_thres):
-    #Create a mapping that indicates which row has iou > threshold
-    remove_map = (iou > nms_thres).nonzero()
-    remove_map = reduce_row_by_column(remove_map)
-    
-    remove_idx = torch_unique(remove_map[:,0])
-    res_bbox = bbox[remove_idx]
-    
-    return res_bbox
-
-def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4):
-    #Zero bounding box with objectioness confidence score less than threshold 
-    obj_conf_filter = (detections[:,:,4] > obj_conf_thr).float().unsqueeze(2)
-    detections = detections * obj_conf_filter
-           
-    #Transform bounding box coordinates to two corners
-    box = detections.new(detections[:,:,:4].shape)
-    box[:,:,0] = detections[:,:,0] - detections[:,:,2]/2
-    box[:,:,1] = detections[:,:,1] - detections[:,:,3]/2
-    box[:,:,2] = box[:,:,0] + detections[:,:,2]
-    box[:,:,3] = box[:,:,1] + detections[:,:,3]
-    detections[:,:,:4] = box
-    
-    num_batches = detections.shape[0]
-    #results = torch.Tensor().to(device)
+def get_nms_detections(detections, detection_idx, num_classes, obj_conf_thr, nms_thr):
+    nB = detections.shape[0]
     results = list()
-        
-    for b in range(num_batches):
-        batch_results = torch.Tensor().cuda()
-        img_det = detections[b]
-        	
-        
-        max_class_score, max_class_idx= torch.max(img_det[:,5:5 + num_classes], 1)
-        img_det = torch.cat((img_det[:,:5],
-                             max_class_score.float().unsqueeze(1),
-                             max_class_idx.float().unsqueeze(1)
-                            ), 1)
-        #img det - [b1_x, b1_y, b2_x, b2_y, obj_conf, class_score, class]
-        
-        #Remove zeroed rows
-        nonzero_idx =  img_det[:,4].nonzero()
-        img_det = img_det[nonzero_idx,:].view(-1,7)
-               
-        if img_det.shape[0] == 0:
-            results.append(batch_results.cpu())
-        else:
-            #Get the classes
-            img_classes = torch_unique(img_det[:,-1])
-            for c in img_classes:
-                # Select rows with "c" class and sort by the class score
-                class_img_det = img_det[(img_det[:,-1] == c).nonzero().squeeze()]
-                # If there is only one detection, it will return a 1D tensor. Therefore, we perform a view to keep it in 2D
-                class_img_det = class_img_det.view(-1, 7)
-                #Sort by objectness score
-                _, sort_idx = class_img_det[:,4].sort(descending=True)
-                class_img_det = class_img_det[sort_idx]
 
-                iou = iou_vectorized(class_img_det)
-                #Alert: There's another loop operation in nms function
-                class_img_det = nms(class_img_det, iou, nms_thr)
-                batch_results = torch.cat((batch_results, class_img_det), 0)
+    for batch_idx in range(nB):
+        batch_results = torch.Tensor()
+        # Select detections for this image
+        det_idx_mask = detection_idx[:, 0] == batch_idx
+        if not det_idx_mask.any():
+            results.append(batch_results)
+            continue
 
-            results.append(batch_results.cpu())
-    
+        # Find the detected classes with unique()
+        img_classes = detection_idx[det_idx_mask][:, 2].unique()
+        for c in img_classes:
+            # Select detections with "c" class
+            cls_index = detection_idx[det_idx_mask & (detection_idx[:, 2] == c)]
+            if len(cls_index) == 0:
+                continue
+
+            det_img_class = detections[cls_index[:,0], cls_index[:,1]]
+
+            # Sort by detection prob
+            _, sort_idx = det_img_class[:, 5+c].sort(descending=True)
+            det_img_class = det_img_class[sort_idx]
+
+            # Get iou
+            iou = iou_vectorized(det_img_class)
+            # Find iou > nms threshold
+            iou = iou > nms_thr
+
+            # Iterate each detection by rows
+            for idx in (range(len(iou))):
+                # Ignore if diagonal element is 0
+                if iou[idx, idx].item() == 0:
+                    continue
+
+                # Find detection with (iou > nms_thr)
+                cols = idx + 1
+                # Only need to check upper diagonal half of the matrix
+                ignore_idx = iou[idx, cols:].nonzero().squeeze() + cols
+                # Set rows and cols to 0 for detections in ignore_idx
+                iou[ignore_idx, :], iou[:, ignore_idx] = 0, 0
+            
+            # Valid detections are marked as 1 along the diagonal vector 
+            selected = iou.diagonal().nonzero().squeeze()
+            det_img_class = det_img_class[selected].view(-1, 5+num_classes)
+            det_img_class = torch.cat((det_img_class[:, :5], # box and objectness
+                                       det_img_class[:, 5+c].view(-1, 1), # detection prob
+                                       Tensor([c]).repeat(len(det_img_class), 1) ), -1) # class
+            # Add class detections to batch_results
+            batch_results = torch.cat((batch_results, det_img_class), 0)
+
+        results.append(batch_results)
     return results
+
+def get_raw_detections(detections, index):
+    nB = detections.shape[0]
+    results = list()
+
+    for batch_idx in range(nB):
+        batch_results = torch.Tensor()
+        # Select detections for this image
+        det_idx_mask = index[:, 0] == batch_idx
+        if not det_idx_mask.any():
+            results.append(batch_results)
+            continue
+
+        selected = index[det_idx_mask]
+        bbox_obj= detections[selected[:, 0], selected[:, 1], :5]
+        prob = detections[selected[:, 0], selected[:, 1], selected[:, 2]+5]
+        cls = selected[:, 2].float()
+        batch_results = torch.cat((bbox_obj[:, :5],
+                                   prob.unsqueeze(-1),
+                                   cls.unsqueeze(-1)), -1)
+        results.append(batch_results)
+    return results
+
+def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4, is_eval=False, use_nms=True):
+    detections = detections.cpu()
+          
+    # Transform bounding box coordinates from cxcywh to x1y1x2y2
+    detections[..., :4] = bbox_cxcywh_to_x1y1x2y2(detections[..., :4])
+    
+    # detection prob = class prob * objectness
+    detections[..., 5: 5+num_classes] = detections[..., 5:5+num_classes] * detections[..., 4].unsqueeze(-1)
+
+    # Allow multiple classes assigned to a single detection box. Used for mAP evaluation
+    if is_eval:
+        # Get the detections with detection prob > obj_conf_thr
+        index = (detections[..., 5: 5+num_classes] > obj_conf_thr).nonzero()
+    # Allow only one class assigned to a single detection box. Used for image output
+    else:
+        # Find max detection prob and filter by obj_conf_thr
+        max_class_score, max_class_idx= torch.max(detections[..., 5:5+num_classes], -1)
+        index_mask = max_class_score > obj_conf_thr
+        index = torch.cat((index_mask.nonzero(),
+                           max_class_idx[index_mask].unsqueeze(-1)), -1)
+    
+    if use_nms:
+        results = get_nms_detections(detections, index, num_classes, obj_conf_thr, nms_thr)
+    else:
+        results = get_raw_detections(detections, index)
+
+    return results
+
+def rescale_bbox(labels, org_w, org_h, new_w, new_h):
+    if len(labels) == 0:
+        return labels
+
+    if isinstance(labels, torch.Tensor):
+        labels = labels.clone()
+    elif isinstance(labels, np.ndarray):
+        labels = labels.copy()
+    else:
+        raise TypeError("Labels must be a numpy array or pytorch tensor")
+
+    ratio_x, ratio_y = new_w / org_w, new_h / org_h
+    mask = labels.sum(-1) != 0
+    labels[mask, 0] = np.clip((labels[mask, 0]) / ratio_x, 0, org_w)
+    labels[mask, 2] = np.clip((labels[mask, 2]) / ratio_x, 0, org_w)
+    labels[mask, 1] = np.clip((labels[mask, 1]) / ratio_y, 0, org_h)
+    labels[mask, 3] = np.clip((labels[mask, 3]) / ratio_y, 0, org_h)
+    
+    return labels
+
+def correct_yolo_boxes(bboxes, org_w, org_h, img_w, img_h, is_letterbox=False):
+    if is_letterbox:
+        bboxes = letterbox_reverse(bboxes, org_w, org_h, img_w, img_h)
+    else:
+        bboxes = rescale_bbox(bboxes, org_w, org_h, img_w, img_h)
+
+    bboxes = BoundingBoxConverter.convert(bboxes, 
+                                          CoordinateType.Absolute, FormatType.x1y1x2y2,
+                                          CoordinateType.Absolute, FormatType.xywh,
+                                          img_dim=(img_w, img_h))
+    return bboxes
+
+
 
 def get_image_shape(img):
     if isinstance(img, tuple):
@@ -254,3 +317,9 @@ def ewma_online(new_value, previous_average, window):
     alpha = 2 /(window + 1.0)
     new_average = alpha * new_value + (1 - alpha) * previous_average
     return new_average
+
+
+def get_image_id_from_path(image_path):
+    image_path = osp.splitext(image_path)[0]
+    m = re.search(r'\d+$', image_path)
+    return int(m.group())
