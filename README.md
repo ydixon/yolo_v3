@@ -11,10 +11,11 @@ This repository aims to create a YoloV3 detector in **Pytorch** and **Jupyter No
 ## Requirements
 
  - Python 3.6.4
- - Pytorch 0.4.0
+ - Pytorch 0.4.1
  - Jupyter Notebook 5.4.0
  - OpenCV 3.4.0
  - imgaug 0.2.6
+ - Pycocotools
  - Cuda Support
 
 ## Instructions
@@ -94,13 +95,20 @@ After using [CVAT](https://github.com/opencv/cvat) to create labels, this notebo
 
 ### cvat_data_train.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/cvat_data_train.ipynb)
 Data is obtained by extracting images from a clip in **Star Wars: Rogue One** with ffmpeg. There are around 300 images and they are annotated by using CVAT. The notebook will simply overfit the model with custom data while using the darknet53 as feature extraction.  
-**P.S I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**
+**P.S I used this notebook as sanity test for yolo_train.ipynb while I was experimenting with the loss function**  
+
+### evaluate.ipynb [<sub><sup>view</sup></sub>](http://nbviewer.jupyter.org/github/ydixon/yolo_v3/blob/master/evaluate.ipynb)
+mAP is an important metric to determine the performance of objection detection tasks. It's difficult to tell whether the model is doing good by looking at either the precision or recall value only. This notebook shows you the steps of creating the ground truth/detection annotations for your own dataset and obtain mAP with the [official COCO API](https://github.com/cocodataset/cocoapi).
+
+![map_official_weights](https://user-images.githubusercontent.com/22487836/51557291-73133d80-1eb7-11e9-9df6-b720f238596b.png)
+
 ## Progress
 **2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**  
 **2018/9/11: Adapt data augmentations**  
 **2018/9/30: New loss function. Adapt darknet cfg augmentations parameters**  
 **2018/11/04: Accumlated gradients. Support use of `subdivisions` for GPU with less memory**  
 **2018/12/15: Multi-scale training. New `DataHelper` class for batch scheduling. `custom_data_train.ipynb` replaced by `cvat_data_train.ipynb`. Deterministic data loading with Pytorch's dataset/dataloader. Training now resume-able between batches instead of epochs while maintaining deterministic behavior.**  
+**2019/1/23: Add mAP evaluation. NMS speed improvment by reducing operations in loops. Support up to Pytorch 0.4.1.**  
 
 TODO:
  1. Integrate pycocotools for evaluation
@@ -116,8 +124,10 @@ TODO:
 
 1. [YOLOv3_: An Incremental Improvement. Joseph Redmon, Ali Farhadi ](https://pjreddie.com/media/files/papers/YOLOv3.pdf) 
 2. [Darknet Github Repo](https://github.com/pjreddie/darknet)
-3. [Fastai](http://www.fast.ai/)
-4. [Pytorch Implementation of Yolo V3](https://github.com/ayooshkathuria/pytorch-yolo-v3)
+3. [AlexeyAB Darknet Github Repo](https://github.com/AlexeyAB/darknet)
+4. [COCO API](https://github.com/cocodataset/cocoapi)
+5. [Fastai](http://www.fast.ai/)
+6. [Pytorch Implementation of Yolo V3](https://github.com/ayooshkathuria/pytorch-yolo-v3)
 5. [Deep Pyramidal Residual Networks](https://arxiv.org/abs/1610.02915)
 6. [eriklindernoren's Repo](https://github.com/eriklindernoren/PyTorch-YOLOv3)
 7. [BobLiu20's Repo](https://github.com/BobLiu20/YOLOv3_PyTorch)
