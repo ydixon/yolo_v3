@@ -46,7 +46,7 @@ class YoloLayer(nn.Module):
         # Calculate cx, cy, anchor mesh
         mesh_x = torch.arange(nW).repeat(nH,1).unsqueeze(2)
         mesh_y = torch.arange(nH).repeat(nW,1).t().unsqueeze(2)
-        mesh_xy = torch.cat((mesh_x,mesh_y), 2)
+        mesh_xy = torch.cat((mesh_x,mesh_y), 2).float()
         mesh_anchors = anchors.view(1, nA, 1, 1, 2).repeat(1, 1, nH, nW, 1)
         
         # pred_boxes holds bx,by,bw,bh
