@@ -154,10 +154,11 @@ class UpsampleGroup(nn.Module):
     def __init__(self, nin):
         super().__init__()
         self.conv = conv_bn_relu(nin, nin//2, ks=1)
-        self.up = nn.Upsample(scale_factor=2, mode="nearest")
+        # self.up = nn.Upsample(scale_factor=2, mode="nearest")
         
     def forward(self, route_head, route_tail):
-        out = self.up(self.conv(route_head))
+        out = self.conv(route_head)
+        out = nn.functional.interpolate(out, scale_factor=2, mode="nearest")
         return torch.cat((out, route_tail), 1)
 
 

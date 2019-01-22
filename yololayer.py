@@ -22,9 +22,9 @@ class YoloLayer(nn.Module):
         
         self.ignore_thres = 0.5
         
-        self.mseloss = nn.MSELoss(size_average=False)
-        self.bceloss = nn.BCELoss(size_average=False)
-        self.bceloss_average = nn.BCELoss(size_average=True)
+        self.mseloss = nn.MSELoss(reduction='sum')
+        self.bceloss = nn.BCELoss(reduction='sum')
+        self.bceloss_average = nn.BCELoss(reduction='elementwise_mean')
  
     def forward(self, x, img_dim, target=None):
         #x : bs x nA*(5 + num_classes) * h * w
