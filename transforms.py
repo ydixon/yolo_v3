@@ -23,7 +23,7 @@ class Compose():
 
 
 class ToTensor():
-    def __init__(self, max_labels=50, max_label_cols=5):
+    def __init__(self, max_labels=90, max_label_cols=5):
         self.max_labels = max_labels
         self.max_label_cols = max_label_cols
 
@@ -74,6 +74,16 @@ class IaaAugmentations():
         sample.update({'img': img, 'label': label, 'bbs':bbs})
         return sample
 
+def rand_uniform(val1, val2):
+    return np.random.uniform(val1, val2)
+
+def rand_scale(val):
+    val = np.random.uniform(1, val)
+    if np.random.random() < 0.5:
+        val = 1 / val
+    return val
+
+
 """
     Follow darknet format:darknet/src/http_stream.cpp
     
@@ -83,14 +93,18 @@ class IaaAugmentations():
 
 """
 def iaa_hsv_aug(hue=0, saturation=1, exposure=1):
-    h_l, h_t = 179 * -hue, 179 * hue
-    s_l, s_t = 1 / saturation if saturation else 0, saturation
-    v_l, v_t = 1 / exposure if exposure else 0, exposure
+    dhue = rand_uniform(-hue, hue) * 179
+    dsat = rand_scale(saturation)
+    dexp = rand_scale(exposure)
+
+    # h_l, h_t = 179 * -hue, 179 * hue
+    # s_l, s_t = 1 / saturation if saturation else 0, saturation
+    # v_l, v_t = 1 / exposure if exposure else 0, exposure
     
     return iaa.Sequential([iaa.ChangeColorspace(from_colorspace="RGB", to_colorspace="HSV"),
-                           iaa.WithChannels([0], iaa.Add((h_l, h_t))),
-                           iaa.WithChannels([1], iaa.Multiply((s_l, s_t))),
-                           iaa.WithChannels([2], iaa.Multiply((v_l, v_t))),
+                           iaa.WithChannels([0], iaa.Add((dhue, dhue))),
+                           iaa.WithChannels([1], iaa.Multiply((dsat, dsat))),
+                           iaa.WithChannels([2], iaa.Multiply((dexp, dexp))),
                            iaa.ChangeColorspace(from_colorspace="HSV", to_colorspace="RGB")])
 
 """
