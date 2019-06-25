@@ -91,3 +91,36 @@ class FormatType():
 	x1y1x2y2 = 0
 	cxcywh = 1
 	xywh = 2
+
+
+def rescale_bbox(labels, org_w, org_h, new_w, new_h):
+    if len(labels) == 0:
+        return labels
+
+    if isinstance(labels, torch.Tensor):
+        labels = labels.clone()
+    elif isinstance(labels, np.ndarray):
+        labels = labels.copy()
+    else:
+        raise TypeError("Labels must be a numpy array or pytorch tensor")
+
+    ratio_x, ratio_y = new_w / org_w, new_h / org_h
+    mask = labels.sum(-1) != 0
+    labels[mask, 0] = np.clip((labels[mask, 0]) / ratio_x, 0, org_w)
+    labels[mask, 2] = np.clip((labels[mask, 2]) / ratio_x, 0, org_w)
+    labels[mask, 1] = np.clip((labels[mask, 1]) / ratio_y, 0, org_h)
+    labels[mask, 3] = np.clip((labels[mask, 3]) / ratio_y, 0, org_h)
+    
+    return labels
+
+def correct_yolo_boxes(bboxes, org_w, org_h, img_w, img_h, is_letterbox=False):
+    if is_letterbox:
+        bboxes = letterbox_reverse(bboxes, org_w, org_h, img_w, img_h)
+    else:
+        bboxes = rescale_bbox(bboxes, org_w, org_h, img_w, img_h)
+
+    bboxes = BoundingBoxConverter.convert(bboxes, 
+                                          CoordinateType.Absolute, FormatType.x1y1x2y2,
+                                          CoordinateType.Absolute, FormatType.xywh,
+                                          img_dim=(img_w, img_h))
+    return bboxes

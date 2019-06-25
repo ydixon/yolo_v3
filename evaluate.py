@@ -30,7 +30,7 @@ from torch.utils.data.dataset import random_split, Subset
 from utils import *
 from darknet import YoloNet
 from draw import show_img, show_img_grid
-from boundingbox import CoordinateType, FormatType, BoundingBoxConverter
+from boundingbox import CoordinateType, FormatType, BoundingBoxConverter, correct_yolo_boxes
 from transforms import IaaAugmentations, IaaLetterbox, ToTensor, Compose, \
                        iaa_hsv_aug, iaa_random_crop, iaa_letterbox, letterbox_reverse
 from dataset import worker_init_fn, variable_shape_collate_fn                       
