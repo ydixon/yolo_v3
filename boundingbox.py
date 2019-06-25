@@ -92,6 +92,29 @@ class FormatType():
 	cxcywh = 1
 	xywh = 2
 
+def letterbox_reverse(labels, org_w, org_h, new_w, new_h):
+    if len(labels) == 0:
+        return labels
+
+    if isinstance(labels, torch.Tensor):
+        labels = labels.clone()
+    elif isinstance(labels, np.ndarray):
+        labels = labels.copy()
+    else:
+        raise TypeError("Labels must be a numpy array or pytorch tensor")
+
+    ratio = min(new_w / org_w, new_h / org_h)
+    resize_w, resize_h = int(org_w * ratio), int(org_h * ratio)
+    x_pad, y_pad = (new_w - resize_w) // 2, (new_h - resize_h) // 2
+
+    mask = labels.sum(-1) != 0
+    labels[mask, 0] = np.clip((labels[mask, 0] - x_pad) / ratio, 0, org_w)
+    labels[mask, 2] = np.clip((labels[mask, 2] - x_pad) / ratio, 0, org_w)
+    labels[mask, 1] = np.clip((labels[mask, 1] - y_pad) / ratio, 0, org_h)
+    labels[mask, 3] = np.clip((labels[mask, 3] - y_pad) / ratio, 0, org_h)
+
+    return labels
+
 
 def rescale_bbox(labels, org_w, org_h, new_w, new_h):
     if len(labels) == 0:
