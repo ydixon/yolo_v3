@@ -241,8 +241,14 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4, is_ev
         # Find max detection prob and filter by obj_conf_thr
         max_class_score, max_class_idx= torch.max(detections[..., 5:5+num_classes], -1)
         index_mask = max_class_score > obj_conf_thr
-        index = torch.cat((index_mask.nonzero(),
+        if index_mask.any():
+            index = torch.cat((index_mask.nonzero(),
                            max_class_idx[index_mask].unsqueeze(-1)), -1)
+        else:
+            return []
+
+    if len(index) == 0:
+        return []
     
     if use_nms:
         results = get_nms_detections(detections, index, num_classes, obj_conf_thr, nms_thr)
@@ -250,40 +256,6 @@ def postprocessing(detections, num_classes, obj_conf_thr=0.5, nms_thr=0.4, is_ev
         results = get_raw_detections(detections, index)
 
     return results
-
-def rescale_bbox(labels, org_w, org_h, new_w, new_h):
-    if len(labels) == 0:
-        return labels
-
-    if isinstance(labels, torch.Tensor):
-        labels = labels.clone()
-    elif isinstance(labels, np.ndarray):
-        labels = labels.copy()
-    else:
-        raise TypeError("Labels must be a numpy array or pytorch tensor")
-
-    ratio_x, ratio_y = new_w / org_w, new_h / org_h
-    mask = labels.sum(-1) != 0
-    labels[mask, 0] = np.clip((labels[mask, 0]) / ratio_x, 0, org_w)
-    labels[mask, 2] = np.clip((labels[mask, 2]) / ratio_x, 0, org_w)
-    labels[mask, 1] = np.clip((labels[mask, 1]) / ratio_y, 0, org_h)
-    labels[mask, 3] = np.clip((labels[mask, 3]) / ratio_y, 0, org_h)
-    
-    return labels
-
-def correct_yolo_boxes(bboxes, org_w, org_h, img_w, img_h, is_letterbox=False):
-    if is_letterbox:
-        bboxes = letterbox_reverse(bboxes, org_w, org_h, img_w, img_h)
-    else:
-        bboxes = rescale_bbox(bboxes, org_w, org_h, img_w, img_h)
-
-    bboxes = BoundingBoxConverter.convert(bboxes, 
-                                          CoordinateType.Absolute, FormatType.x1y1x2y2,
-                                          CoordinateType.Absolute, FormatType.xywh,
-                                          img_dim=(img_w, img_h))
-    return bboxes
-
-
 
 def get_image_shape(img):
     if isinstance(img, tuple):
