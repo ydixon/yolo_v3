@@ -102,6 +102,22 @@ mAP is an important metric to determine the performance of objection detection t
 
 ![map_official_weights](https://user-images.githubusercontent.com/22487836/51557291-73133d80-1eb7-11e9-9df6-b720f238596b.png)
 
+## Training
+The model is trained from scratch with darknet53 as backbone. The model ended up reaching mAP of **54.4%** on the 5K validation set. However, I still think the original yolov3 weights performs a lot better than this model, but I believe this is a good starting point. The weights at various stages could be downloaded in this google drive [link](https://drive.google.com/drive/folders/1HPxEA7kyJxLTu0mWYu5Vlcz57NcuD2U3?usp=sharing). Feel free to test/experiment with them.  
+
+Epoch | Batch | mAP@0.5 | weights |
+--- | --- | --- | --- |
+50 | 91612 | 37.6% | [link](https://drive.google.com/open?id=1d-FGt4QgW9KVwG13pixQP57HQMbL9vz0) |
+100 | 183225 | 44.5% | [link](https://drive.google.com/open?id=1KGSNdyuUnyi3LGNwIy7rk6MoodOsL0r8) |
+150 | 274837 | 46.7% | [link](https://drive.google.com/open?id=1hv0QdHneGoJpNzNM_QqnD2byv1Co-3y2) |
+200 | 366450 | 49.1% | [link](https://drive.google.com/open?id=10SwGhJUwyS0pxsWbV-tOyssYswTcvk8F) | 
+250 | 458062 | 54.1% | [link](https://drive.google.com/open?id=1CT8V2caf6gXrOKxd5G1U97ryKOWi3OVE) | 
+273 | 500200 | 53.2 | [link](https://drive.google.com/open?id=1BWlWnYUsB63toFKh2PTwHPO1E_R3uG6m) |
+**COCO_ydixon** | **510099** |**54.5%** | [**link**](https://drive.google.com/open?id=1EjT331hIgi-zKMaHyF5C6GgOYbYQ87I8) |
+**darknet** | **-** | **54.7%** | N/A |
+
+![mAP_ydixon](https://user-images.githubusercontent.com/22487836/60459189-06c11500-9c73-11e9-986f-11e93f518a5c.png)
+
 ## Progress
 **2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**  
 **2018/9/11: Adapt data augmentations**  
