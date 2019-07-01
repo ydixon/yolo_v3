@@ -32,7 +32,7 @@ from darknet import YoloNet
 from draw import show_img, show_img_grid
 from boundingbox import CoordinateType, FormatType, BoundingBoxConverter, correct_yolo_boxes
 from transforms import IaaAugmentations, IaaLetterbox, ToTensor, Compose, \
-                       iaa_hsv_aug, iaa_random_crop, iaa_letterbox, letterbox_reverse
+                       iaa_hsv_aug, iaa_random_crop, iaa_letterbox
 from dataset import worker_init_fn, variable_shape_collate_fn                       
 
 # Pycocotools Format
