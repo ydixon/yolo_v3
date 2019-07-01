@@ -174,24 +174,24 @@ class YoloNet(nn.Module):
                           'nCorrect', 'nGT', 'recall']
         
         anchors = [(anchors[i], anchors[i+1]) for i in range(0,len(anchors),2)]
-        anchors = [anchors[i:i+3] for i in range(0, len(anchors), 3)][::-1]
+        # anchors = [anchors[i:i+3] for i in range(0, len(anchors), 3)][::-1]
                 
         self.feature = Darknet([1,2,8,8,4])
         self.feature.addCachedOut(61)
         self.feature.addCachedOut(36)
         
         self.pre_det1 = PreDetectionConvGroup(1024, 512, numClass=self.numClass)
-        self.yolo1 = YoloLayer(anchors[0], img_dim, self.numClass)
+        self.yolo1 = YoloLayer(anchors, [6, 7, 8], img_dim, self.numClass)
         self.pre_det1.addCachedOut(-3) #Fetch output from 4th layer backward including yolo layer
         
         self.up1 = UpsampleGroup(512)
         self.pre_det2 = PreDetectionConvGroup(768, 256, numClass=self.numClass)
-        self.yolo2 = YoloLayer(anchors[1], img_dim, self.numClass)
+        self.yolo2 = YoloLayer(anchors, [3, 4, 5], img_dim, self.numClass)
         self.pre_det2.addCachedOut(-3)
         
         self.up2 = UpsampleGroup(256)
         self.pre_det3 = PreDetectionConvGroup(384, 128, numClass=self.numClass)
-        self.yolo3 = YoloLayer(anchors[2], img_dim, self.numClass)
+        self.yolo3 = YoloLayer(anchors, [0, 1, 2], img_dim, self.numClass)
         
         
         
