@@ -58,7 +58,7 @@ def train_impl(data, net, optimizer, recorder, scheduler,
         
         # Accumulate gradients for each mini-batch    
         loss = net(inp, labels)
-        loss = loss / data.net_subdivisions
+        # loss = loss / data.net_subdivisions
         loss.backward()
         
         batch_stats.append(net.stats)
@@ -194,9 +194,10 @@ class Recorder:
         self.current_stats.update({k: self.ewma_stats[k] for k in self.ewma_keys}) 
         
     def on_batch_end(self, batch_stats, batch_datasize):
-        self.ewma_stats = OrderedDict({k: ewma_online(batch_stats[k], self.ewma_stats[k], 10)
-                                      if self.ewma_stats[k] != 0 else batch_stats[k]
-                                      for k in self.ewma_keys})
+        # self.ewma_stats = OrderedDict({k: ewma_online(batch_stats[k], self.ewma_stats[k], 10)
+        #                               if self.ewma_stats[k] != 0 else batch_stats[k]
+        #                               for k in self.ewma_keys})
+        self.ewma_stats = OrderedDict({k: batch_stats[k] for k in self.ewma_keys})
         self.current_stats.update({k: self.ewma_stats[k] for k in self.ewma_keys}) 
 
     def on_epoch_end(self):
