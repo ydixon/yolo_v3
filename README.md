@@ -25,6 +25,9 @@ This repository aims to create a YoloV3 detector in **Pytorch** and **Jupyter No
 	$ wget https://pjreddie.com/media/files/yolov3.weights
 ##### Download Darknet53 weights
 	$ wget https://pjreddie.com/media/files/darknet53.conv.74
+##### Download COCO_ydixon weights
+	$ cd weights/COCO_ydixon
+	$ # Download weights from https://drive.google.com/drive/folders/1HPxEA7kyJxLTu0mWYu5Vlcz57NcuD2U3?usp=sharing
 ##### Download COCO
     $ cd data/
     $ bash get_coco_dataset.sh
@@ -118,13 +121,35 @@ Epoch | Batch | mAP@0.5 | weights |
 
 ![mAP_ydixon](https://user-images.githubusercontent.com/22487836/60459189-06c11500-9c73-11e9-986f-11e93f518a5c.png)
 
-## Progress
-**2018/8/30: Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now**  
-**2018/9/11: Adapt data augmentations**  
-**2018/9/30: New loss function. Adapt darknet cfg augmentations parameters**  
-**2018/11/04: Accumlated gradients. Support use of `subdivisions` for GPU with less memory**  
-**2018/12/15: Multi-scale training. New `DataHelper` class for batch scheduling. `custom_data_train.ipynb` replaced by `cvat_data_train.ipynb`. Deterministic data loading with Pytorch's dataset/dataloader. Training now resume-able between batches instead of epochs while maintaining deterministic behavior.**  
-**2019/1/23: Add mAP evaluation. NMS speed improvment by reducing operations in loops. Support up to Pytorch 0.4.1.**  
+## Update Notes  
+
+
+**2018/8/30:**  
+Uploaded data/annotations for custom_data_train.ipynb. All notebooks should be working now.  
+**2018/9/11:**  
+Adapt data augmentations.  
+**2018/9/30:**  
+New loss function. Adapt darknet cfg augmentations parameters.  
+**2018/11/04:**  
+Accumlated gradients. Support use of `subdivisions` for GPU with less memory.  
+**2018/12/15:**  
+Multi-scale training. New `DataHelper` class for batch scheduling. `custom_data_train.ipynb` replaced by `cvat_data_train.ipynb`. Deterministic data loading with Pytorch's dataset/dataloader. Training now resume-able between batches instead of epochs while maintaining deterministic behavior.  
+**2019/1/23:**  
+Add mAP evaluation. NMS speed improvment by reducing operations in loops. Support up to Pytorch 0.4.1.  
+**2019/7/2:**  
+It's been awhile since last update. I've actually fixed the loss function few months ago, but I was held up by other projects. Also, I wanted to verify it before releasing them so users won't waste weeks of valuable time and GPU resource, only to found out the repo doesn't perform as stated.  
+- Update loss function
+	- Small objects gets larger gradient.
+	- Each ground truth object is only assigned to 1 anchor across 3 layers.
+- Training
+	- use sum of errors instead of averaging when dealing with subdivisions
+	- display loss of individual batch instead of EWMA loss
+- Update test code
+	- Add correct_yolo_boxes
+		- detection boxes output from network are either letterboxed or scaled. This function reverse these transformations. 
+- COCO_ydixon weights
+	- Download weights to ./weights/COCO_ydixon
+	- Test/Verify them in yolo_train_short.ipynb, evaluate.ipynb
 
 TODO:
  1. Integrate pycocotools for evaluation
