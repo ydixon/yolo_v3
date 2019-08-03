@@ -137,7 +137,7 @@ Multi-scale training. New `DataHelper` class for batch scheduling. `custom_data_
 **2019/1/23:**  
 Add mAP evaluation. NMS speed improvment by reducing operations in loops. Support up to Pytorch 0.4.1.  
 **2019/7/2:**  
-It's been awhile since last update. I've actually fixed the loss function few months ago, but I was held up by other projects. Also, I wanted to verify it before releasing them so users won't waste weeks of valuable time and GPU resource, only to found out the repo doesn't perform as stated.  
+It's been awhile since last update. I've actually fixed the loss function few months ago, but I was held up by other projects. 
 - Update loss function
 	- Small objects gets larger gradient.
 	- Each ground truth object is only assigned to 1 anchor across 3 layers.
@@ -152,13 +152,9 @@ It's been awhile since last update. I've actually fixed the loss function few mo
 	- Test/Verify them in yolo_train_short.ipynb, evaluate.ipynb
 
 TODO:
- 1. Integrate pycocotools for evaluation
- 2. mAP (mean average precision)
- 3. Data augmentation (random crop, rotate)
- 4. Implement backhook for YoloNet branching
- 5. Feed Video to detector
- 6. Fix possible CUDA memory leaks
- 7. Fix class and variable names
+ 1. Implement backhook for YoloNet branching
+ 2. Make command line API
+ 3. Feed Video to detector
 
 
 ## References
